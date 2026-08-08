@@ -1,0 +1,200 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ==========================================
+// 1. Enums
+// ==========================================
+enum Role {
+  DONOR
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  EDITOR
+}
+
+enum ProjectStatus {
+  ACTIVE
+  COMPLETED
+  PAUSED
+}
+
+enum DonationStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+// ==========================================
+// 2. Users & Admins
+// ==========================================
+model User {
+  id              String           @id @default(auto()) @map("_id") @db.ObjectId
+  name            String
+  email           String           @unique
+  passwordHash    String
+  image           String?          
+  role            Role             @default(DONOR)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  // Relations
+  donations       Donation[]
+  rating          PlatformRating?  
+}
+
+model Admin {
+  id              String           @id @default(auto()) @map("_id") @db.ObjectId
+  name            String
+  email           String           @unique
+  passwordHash    String
+  role            AdminRole        @default(SUPER_ADMIN)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+// ==========================================
+// 3. Categories & Projects
+// ==========================================
+model Category {
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  nameAr          String    @unique
+  nameEn          String    @unique
+  createdAt       DateTime  @default(now())
+  
+  // Relations
+  projects        Project[]
+}
+
+model Project {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  titleAr         String
+  titleEn         String
+  descriptionAr   String
+  descriptionEn   String
+  imageUrl        String?
+  targetAmount    Float
+  collectedAmount Float         @default(0)
+  status          ProjectStatus @default(ACTIVE)
+  
+  // Relations
+  categoryId      String        @db.ObjectId
+  category        Category      @relation(fields: [categoryId], references: [id])
+  donations       Donation[]
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+// ==========================================
+// 4. Donations
+// ==========================================
+model Donation {
+  id              String         @id @default(auto()) @map("_id") @db.ObjectId
+  amount          Float
+  status          DonationStatus @default(PENDING)
+  
+  projectId       String?        @db.ObjectId
+  project         Project?       @relation(fields: [projectId], references: [id])
+
+  userId          String?        @db.ObjectId
+  user            User?          @relation(fields: [userId], references: [id])
+
+  createdAt       DateTime       @default(now())
+}
+
+// ==========================================
+// 5. Content & Interaction
+// ==========================================
+model News {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  titleAr         String
+  titleEn         String
+  descriptionAr   String
+  descriptionEn   String
+  image           String
+  detailsUrl      String?
+  isUrgent        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+}
+
+model LiveStream {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  titleAr         String
+  titleEn         String
+  youtubeUrl      String
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+}
+
+model FAQ {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  questionAr      String
+  questionEn      String
+  answerAr        String
+  answerEn        String
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model PlatformRating {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  rating          Int
+  comment         String?
+  
+  // 1:1 Relation
+  userId          String   @unique @db.ObjectId
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime @default(now())
+}
+
+// ==========================================
+// 6. Independent Tables
+// ==========================================
+model PlatformWallet {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  titleAr         String   
+  titleEn         String
+  bankName        String?  
+  providerName    String?  
+  accountName     String?
+  accountNumber   String
+  iban            String?
+  createdAt       DateTime @default(now())
+}
+
+model Subscriber {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  email           String   @unique
+  isActive        Boolean  @default(true)
+  joinedAt        DateTime @default(now())
+}
+
+// ==========================================
+// 7. Global Settings
+// ==========================================
+model PlatformSettings {
+  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
+  siteNameAr         String
+  siteNameEn         String
+  aboutUsTextAr      String
+  aboutUsTextEn      String
+  logoUrl            String?
+  aboutUsImageUrl    String?
+  contactPhone       String?
+  contactEmail       String?
+  
+  totalBeneficiaries Int      @default(0)
+  foodBaskets        Int      @default(0)
+  yearsOfGiving      Int      @default(0)
+  
+  updatedAt          DateTime @updatedAt
+}
