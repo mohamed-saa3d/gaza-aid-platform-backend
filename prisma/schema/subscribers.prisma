@@ -1,0 +1,6 @@
+model Subscriber {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  email           String   @unique
+  isActive        Boolean  @default(true)
+  joinedAt        DateTime @default(now())
+}

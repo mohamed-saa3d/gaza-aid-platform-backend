@@ -1,0 +1,11 @@
+model News {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  titleAr         String
+  titleEn         String
+  descriptionAr   String
+  descriptionEn   String
+  image           String
+  detailsUrl      String?
+  isUrgent        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+}

@@ -1,0 +1,19 @@
+enum Role {
+  DONOR
+}
+
+enum AdminRole {
+  ADMIN
+}
+
+enum ProjectStatus {
+  ACTIVE
+  COMPLETED
+  PAUSED
+}
+
+enum DonationStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}

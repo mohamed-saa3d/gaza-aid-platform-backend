@@ -1,0 +1,11 @@
+model PlatformWallet {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  titleAr         String   
+  titleEn         String
+  bankName        String?  
+  providerName    String?  
+  accountName     String?
+  accountNumber   String
+  iban            String?
+  createdAt       DateTime @default(now())
+}

@@ -1,0 +1,29 @@
+model Category {
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  nameAr          String    @unique
+  nameEn          String    @unique
+  createdAt       DateTime  @default(now())
+  
+  // Relations
+  projects        Project[]
+}
+
+model Project {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  titleAr         String
+  titleEn         String
+  descriptionAr   String
+  descriptionEn   String
+  imageUrl        String?
+  targetAmount    Float
+  collectedAmount Float         @default(0)
+  status          ProjectStatus @default(ACTIVE)
+  
+  // Relations
+  categoryId      String        @db.ObjectId
+  category        Category      @relation(fields: [categoryId], references: [id])
+  donations       Donation[]
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}

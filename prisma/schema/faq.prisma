@@ -1,0 +1,10 @@
+model FAQ {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  questionAr      String
+  questionEn      String
+  answerAr        String
+  answerEn        String
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
