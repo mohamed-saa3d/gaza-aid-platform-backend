@@ -1,17 +1,17 @@
 model PlatformSettings {
-  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
-  siteNameAr         String
-  siteNameEn         String
-  aboutUsTextAr      String
-  aboutUsTextEn      String
-  logoUrl            String?
-  aboutUsImageUrl    String?
-  contactPhone       String?
-  contactEmail       String?
-  
-  totalBeneficiaries Int      @default(0)
-  foodBaskets        Int      @default(0)
-  yearsOfGiving      Int      @default(0)
-  
-  updatedAt          DateTime @updatedAt
+  id              String  @id @default(auto()) @map("_id") @db.ObjectId
+  siteNameAr      String
+  siteNameEn      String
+  aboutUsTextAr   String
+  aboutUsTextEn   String
+  logoUrl         String?
+  aboutUsImageUrl String?
+  contactPhone    String?
+  contactEmail    String?
+
+  totalBeneficiaries Int @default(0)
+  foodBaskets        Int @default(0)
+  yearsOfGiving      Int @default(0)
+
+  updatedAt DateTime @updatedAt
 }

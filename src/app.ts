@@ -1,5 +1,6 @@
 import express from 'express';
 import { adminRoutes } from './modules/admin/admin.routes';
+import { authRoutes } from './modules/auth/auth.routes';
 import { usersRoutes } from './modules/users/users.routes';
 import { projectsRoutes } from './modules/projects/projects.routes';
 import { donationsRoutes } from './modules/donations/donations.routes';
@@ -23,6 +24,7 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/api/admins', adminRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/projects', projectsRoutes);
 app.use('/api/donations', donationsRoutes);

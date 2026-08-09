@@ -1,11 +1,11 @@
 model Category {
-  id              String    @id @default(auto()) @map("_id") @db.ObjectId
-  nameAr          String    @unique
-  nameEn          String    @unique
-  createdAt       DateTime  @default(now())
-  
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  nameAr    String   @unique
+  nameEn    String   @unique
+  createdAt DateTime @default(now())
+
   // Relations
-  projects        Project[]
+  projects Project[]
 }
 
 model Project {
@@ -18,12 +18,12 @@ model Project {
   targetAmount    Float
   collectedAmount Float         @default(0)
   status          ProjectStatus @default(ACTIVE)
-  
-  // Relations
-  categoryId      String        @db.ObjectId
-  category        Category      @relation(fields: [categoryId], references: [id])
-  donations       Donation[]
 
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  // Relations
+  categoryId String     @db.ObjectId
+  category   Category   @relation(fields: [categoryId], references: [id])
+  donations  Donation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

@@ -17,4 +17,10 @@ export const env = {
   DATABASE_URL: process.env.DATABASE_URL,
   JWT_SECRET: process.env.JWT_SECRET ?? 'change-this-secret',
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN ?? '7d',
+  SMTP_HOST: process.env.SMTP_HOST,
+  SMTP_PORT: toNumber(process.env.SMTP_PORT, 587),
+  SMTP_USER: process.env.SMTP_USER,
+  SMTP_PASS: process.env.SMTP_PASS,
+  FROM_EMAIL: process.env.FROM_EMAIL,
+  FRONTEND_URL: process.env.FRONTEND_URL,
 };

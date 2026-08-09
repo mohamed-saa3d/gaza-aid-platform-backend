@@ -1,11 +1,11 @@
 model PlatformRating {
-  id              String   @id @default(auto()) @map("_id") @db.ObjectId
-  rating          Int
-  comment         String?
-  
-  // 1:1 Relation
-  userId          String   @unique @db.ObjectId
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id      String  @id @default(auto()) @map("_id") @db.ObjectId
+  rating  Int
+  comment String?
 
-  createdAt       DateTime @default(now())
+  // 1:1 Relation
+  userId String @unique @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
 }

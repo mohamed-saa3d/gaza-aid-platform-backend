@@ -1,8 +1,8 @@
 model LiveStream {
-  id              String   @id @default(auto()) @map("_id") @db.ObjectId
-  titleAr         String
-  titleEn         String
-  youtubeUrl      String
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  titleAr    String
+  titleEn    String
+  youtubeUrl String
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
 }

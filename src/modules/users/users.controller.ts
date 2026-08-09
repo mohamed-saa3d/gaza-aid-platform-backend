@@ -10,34 +10,6 @@ const getAuthenticatedUserId = (req: Request): string => {
   return req.user.id;
 };
 
-export const register: RequestHandler = async (req, res, next) => {
-  try {
-    const user = await usersService.register(req.body);
-
-    res.status(201).json({
-      success: true,
-      message: 'User registered successfully',
-      data: user,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const login: RequestHandler = async (req, res, next) => {
-  try {
-    const data = await usersService.login(req.body);
-
-    res.status(200).json({
-      success: true,
-      message: 'User logged in successfully',
-      data,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
 export const getProfile: RequestHandler = async (req, res, next) => {
   try {
     const user = await usersService.getProfile(getAuthenticatedUserId(req));

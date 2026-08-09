@@ -1,14 +1,16 @@
 model User {
-  id              String           @id @default(auto()) @map("_id") @db.ObjectId
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
   name            String
-  email           String           @unique
+  email           String   @unique
   passwordHash    String
-  image           String?          
-  role            Role             @default(DONOR)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  image           String?
+  role            Role     @default(DONOR)
+  isEmailVerified Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   // Relations
-  donations       Donation[]
-  rating          PlatformRating?  
+  donations Donation[]
+  rating    PlatformRating?
+  tokens    AuthToken[]
 }
