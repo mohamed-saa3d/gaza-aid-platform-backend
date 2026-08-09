@@ -23,4 +23,4 @@ COPY prisma ./prisma
 COPY src ./src
 COPY tsconfig.json ./
 EXPOSE 3000
-CMD ["npx", "ts-node", "src/main.ts"]
+CMD ["npx", "ts-node", "src/server.ts"]
