@@ -1,0 +1,111 @@
+import type { RequestHandler } from 'express';
+import { AdminRole } from '@prisma/client';
+import { adminService } from './admin.service';
+import { AppError } from '../../shared/errors/app-error';
+import { isMongoObjectId } from '../../shared/utils/object-id';
+
+const getSingleParam = (param: string | string[] | undefined): string | undefined => {
+  return Array.isArray(param) ? param[0] : param;
+};
+
+export const createAdmin: RequestHandler = async (req, res, next) => {
+  try {
+    const { name, email, password, role } = req.body as {
+      name?: string;
+      email?: string;
+      password?: string;
+      role?: AdminRole;
+    };
+
+    if (!name || !email || !password) {
+      throw new AppError('Name, email, and password are required', 400);
+    }
+
+    if (role && !Object.values(AdminRole).includes(role)) {
+      throw new AppError('Invalid admin role', 400);
+    }
+
+    const admin = await adminService.createAdmin({ name, email, password, role });
+
+    res.status(201).json({
+      success: true,
+      message: 'Admin created successfully',
+      data: admin,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAllAdmins: RequestHandler = async (_req, res, next) => {
+  try {
+    const admins = await adminService.getAllAdmins();
+
+    res.status(200).json({
+      success: true,
+      message: 'Admins fetched successfully',
+      data: admins,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateAdmin: RequestHandler = async (req, res, next) => {
+  try {
+    const id = getSingleParam(req.params.id);
+    const { name, role } = req.body as {
+      name?: string;
+      role?: AdminRole;
+    };
+
+    if (!id) {
+      throw new AppError('Admin ID is required', 400);
+    }
+
+    if (!isMongoObjectId(id)) {
+      throw new AppError('Invalid admin ID', 400);
+    }
+
+    if (!name && !role) {
+      throw new AppError('At least one field is required to update the admin', 400);
+    }
+
+    if (role && !Object.values(AdminRole).includes(role)) {
+      throw new AppError('Invalid admin role', 400);
+    }
+
+    const admin = await adminService.updateAdmin({ id, name, role });
+
+    res.status(200).json({
+      success: true,
+      message: 'Admin updated successfully',
+      data: admin,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteAdmin: RequestHandler = async (req, res, next) => {
+  try {
+    const id = getSingleParam(req.params.id);
+
+    if (!id) {
+      throw new AppError('Admin ID is required', 400);
+    }
+
+    if (!isMongoObjectId(id)) {
+      throw new AppError('Invalid admin ID', 400);
+    }
+
+    await adminService.deleteAdmin(id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Admin deleted successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
