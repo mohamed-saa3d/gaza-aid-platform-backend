@@ -13,4 +13,5 @@ model User {
   donations Donation[]
   rating    PlatformRating?
   tokens    AuthToken[]
+  wallet    Wallet?
 }

@@ -17,3 +17,21 @@ enum DonationStatus {
   SUCCESS
   FAILED
 }
+
+enum WalletStatus {
+  ACTIVE
+  LOCKED
+}
+
+enum WalletTransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  REFUND
+  DONATION
+}
+
+enum WalletTransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}

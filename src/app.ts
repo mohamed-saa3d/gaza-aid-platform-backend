@@ -30,7 +30,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/projects', projectsRoutes);
 app.use('/api/donations', donationsRoutes);
-app.use('/api/wallet', walletRoutes);
+app.use('/api/wallets', walletRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/faq', faqRoutes);
 app.use('/api/live-streams', liveStreamsRoutes);
