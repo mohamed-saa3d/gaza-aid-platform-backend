@@ -1,2 +1,47 @@
-node_modules 
+# Environment Variables & Secrets (حساس جداً)
 .env
+.env*.local
+.env.production
+!.env.example
+
+# Dependencies (يتم تثبيتها عبر npm install)
+node_modules/
+/.pnp
+.pnp.js
+
+# Build & Output Directories (الملفات الناتجة عن الـ Build)
+dist/
+build/
+*.tsbuildinfo
+
+# Prisma Generated Files (إذا كنت تولد العميل داخل مجلد مخصص غير node_modules)
+# prisma/client/
+
+# Logs & Debugging
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Docker
+.docker/
+
+# Draw.io / Design Drafts (ملفات التصميم المؤقتة أو النسخ الاحتياطية)
+*.~*.drawio.bkp
+*.drawio.bkp
+
+# Operating System & IDE Files
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
