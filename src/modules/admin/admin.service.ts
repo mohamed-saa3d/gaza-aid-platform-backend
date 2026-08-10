@@ -2,6 +2,7 @@ import { AdminRole, Prisma } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { prisma } from '../../shared/database/prisma';
 import { AppError } from '../../shared/errors/app-error';
+import { signRefreshToken, signToken } from '../../shared/utils/jwt';
 
 const PASSWORD_SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS ?? 12);
 
@@ -28,6 +29,11 @@ export type UpdateAdminInput = {
 };
 
 const normalizeEmail = (email: string): string => email.trim().toLowerCase();
+
+type AdminLoginInput = {
+  email: string;
+  password: string;
+};
 
 export const adminService = {
   async createAdmin(input: CreateAdminInput) {
@@ -72,6 +78,58 @@ export const adminService = {
         createdAt: 'desc',
       },
     });
+  },
+
+  async login(input: AdminLoginInput) {
+    const admin = await prisma.admin.findUnique({
+      where: { email: normalizeEmail(input.email) },
+    });
+
+    if (!admin) {
+      throw new AppError('Invalid email or password', 401);
+    }
+
+    const isPasswordValid = await bcrypt.compare(input.password, admin.passwordHash);
+
+    if (!isPasswordValid) {
+      throw new AppError('Invalid email or password', 401);
+    }
+
+    if ('isActive' in admin && (admin as any).isActive === false) {
+      throw new AppError('Admin account is inactive', 403);
+    }
+
+    return {
+      accessToken: signToken({
+        id: admin.id,
+        role: 'ADMIN',
+        isAdmin: true,
+      }),
+      refreshToken: signRefreshToken({
+        id: admin.id,
+        role: 'ADMIN',
+        isAdmin: true,
+      }),
+      admin: {
+        id: admin.id,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role,
+      },
+    };
+  },
+
+  async getProfile(adminId: string) {
+    const admin = await prisma.admin.findUnique({
+      where: { id: adminId },
+      select: adminSelect,
+    });
+
+    if (!admin) {
+      throw new AppError('Admin was not found', 404);
+    }
+
+    return admin;
   },
 
   async updateAdmin(input: UpdateAdminInput) {

@@ -38,3 +38,29 @@ export const authenticateUser = (req: Request, _res: Response, next: NextFunctio
     next(new AppError('Invalid or expired authentication token', 401));
   }
 };
+
+export const requireAdmin = (req: Request, _res: Response, next: NextFunction): void => {
+  try {
+    const token = getBearerToken(req.headers.authorization);
+
+    if (!token) {
+      throw new AppError('Authentication token is required', 401);
+    }
+
+    const payload = verifyToken(token);
+
+    if (payload.role !== 'ADMIN') {
+      throw new AppError('Forbidden: Admin access required', 403);
+    }
+
+    req.user = payload;
+    next();
+  } catch (error) {
+    if (error instanceof AppError) {
+      next(error);
+      return;
+    }
+
+    next(new AppError('Invalid or expired authentication token', 401));
+  }
+};

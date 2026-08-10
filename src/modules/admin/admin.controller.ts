@@ -8,6 +8,42 @@ const getSingleParam = (param: string | string[] | undefined): string | undefine
   return Array.isArray(param) ? param[0] : param;
 };
 
+export const adminLogin: RequestHandler = async (req, res, next) => {
+  try {
+    const { email, password } = req.body as { email: string; password: string };
+    const { accessToken, refreshToken, admin } = await adminService.login({ email, password });
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Admin logged in successfully',
+      data: { accessToken, admin },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAdminProfile: RequestHandler = async (req, res, next) => {
+  try {
+    const admin = await adminService.getProfile(req.user!.id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Admin profile fetched successfully',
+      data: admin,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const createAdmin: RequestHandler = async (req, res, next) => {
   try {
     const { name, email, password, role } = req.body as {

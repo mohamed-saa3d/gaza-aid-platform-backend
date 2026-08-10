@@ -1,14 +1,22 @@
 import { Router } from 'express';
+import { loginLimiter } from '../../shared/middlewares/rate-limiter.middleware';
+import { requireAdmin } from '../../shared/middlewares/auth.middleware';
+import { validateRequest } from '../../shared/middlewares/validate.middleware';
 import {
+  adminLogin,
   createAdmin,
   deleteAdmin,
+  getAdminProfile,
   getAllAdmins,
   updateAdmin,
 } from './admin.controller';
+import { adminLoginSchema } from './admin.validation';
 
 export const adminRoutes = Router();
 
-adminRoutes.post('/', createAdmin);
-adminRoutes.get('/', getAllAdmins);
-adminRoutes.patch('/:id', updateAdmin);
-adminRoutes.delete('/:id', deleteAdmin);
+adminRoutes.post('/login', loginLimiter, validateRequest(adminLoginSchema), adminLogin);
+adminRoutes.get('/profile', requireAdmin, getAdminProfile);
+adminRoutes.post('/', requireAdmin, createAdmin);
+adminRoutes.get('/', requireAdmin, getAllAdmins);
+adminRoutes.put('/:id', requireAdmin, updateAdmin);
+adminRoutes.delete('/:id', requireAdmin, deleteAdmin);
