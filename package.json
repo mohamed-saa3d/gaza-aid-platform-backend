@@ -3,8 +3,11 @@
     "schema": "prisma/schema"
   },
   "scripts": {
-  "dev": "concurrently \"npx prisma studio\" \"tsx watch src/server.ts\""
-},
+    "dev": "concurrently \"tsx watch src/server.ts\"",
+    "db:reset": "tsx scripts/reset-db.ts",
+    "db:studio": "npx prisma studio",
+    "docker:run": "docker run"
+  },
   "dependencies": {
     "@prisma/client": "^5.22.0",
     "bcrypt": "^6.0.0",

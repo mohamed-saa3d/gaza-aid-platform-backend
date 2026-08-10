@@ -12,12 +12,12 @@ const getAuthenticatedUserId = (req: Request): string => {
 
 export const register: RequestHandler = async (req, res, next) => {
   try {
-    const user = await authService.register(req.body);
+    const { message, redirectTo } = await authService.register(req.body);
 
     res.status(201).json({
       success: true,
-      message: 'User registered successfully',
-      data: user,
+      message,
+      data: { redirectTo },
     });
   } catch (error) {
     next(error);
@@ -40,7 +40,7 @@ export const login: RequestHandler = async (req, res, next) => {
 
 export const verifyEmail: RequestHandler = async (req, res, next) => {
   try {
-    await authService.verifyEmail(req.body.token);
+    await authService.verifyEmail(req.body.otp);
 
     res.status(200).json({
       success: true,
@@ -53,11 +53,12 @@ export const verifyEmail: RequestHandler = async (req, res, next) => {
 
 export const forgotPassword: RequestHandler = async (req, res, next) => {
   try {
-    await authService.forgotPassword(req.body.email);
+    const { message, redirectTo } = await authService.forgotPassword(req.body.email);
 
     res.status(200).json({
       success: true,
-      message: 'If the email exists, a password reset link has been sent',
+      message,
+      data: { redirectTo },
     });
   } catch (error) {
     next(error);
@@ -66,7 +67,7 @@ export const forgotPassword: RequestHandler = async (req, res, next) => {
 
 export const resetPassword: RequestHandler = async (req, res, next) => {
   try {
-    await authService.resetPassword(req.body.token, req.body.newPassword);
+    await authService.resetPassword(req.body.otp, req.body.newPassword);
 
     res.status(200).json({
       success: true,

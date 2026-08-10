@@ -18,7 +18,7 @@ export const loginSchema = z.object({
 
 export const verifyEmailSchema = z.object({
   body: z.object({
-    token: z.string().trim().min(1, 'Verification token is required'),
+    otp: z.string().trim().regex(/^[0-9]{6}$/, 'OTP must be a 6-digit number'),
   }),
 });
 
@@ -30,7 +30,7 @@ export const forgotPasswordSchema = z.object({
 
 export const resetPasswordSchema = z.object({
   body: z.object({
-    token: z.string().trim().min(1, 'Password reset token is required'),
+    otp: z.string().trim().regex(/^[0-9]{6}$/, 'OTP must be a 6-digit number'),
     newPassword: z.string().min(8, 'Password must be at least 8 characters'),
   }),
 });

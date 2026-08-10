@@ -18,6 +18,7 @@ const userSelect = {
 
 const hashToken = (token: string) => crypto.createHash('sha256').update(token).digest('hex');
 const normalizeEmail = (email: string): string => email.trim().toLowerCase();
+const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 type RegisterInput = {
   name: string;
@@ -44,12 +45,12 @@ export const authService = {
     }
 
     const passwordHash = await bcrypt.hash(input.password, 12);
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-    const verificationTokenHash = hashToken(verificationToken);
+    const otp = generateOTP();
+    const otpHash = hashToken(otp);
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     try {
-      const user = await prisma.user.create({
+      await prisma.user.create({
         data: {
           name: input.name.trim(),
           email,
@@ -58,17 +59,19 @@ export const authService = {
           role: Role.DONOR,
           tokens: {
             create: {
-              token: verificationTokenHash,
+              token: otpHash,
               type: 'EMAIL_VERIFICATION',
               expiresAt: verificationExpires,
             },
           },
         },
-        select: userSelect,
       });
 
-      await emailService.sendVerificationEmail(email, verificationToken);
-      return user;
+      await emailService.sendVerificationEmail(email, otp);
+      return {
+        message: 'OTP sent successfully to your email',
+        redirectTo: '/verify-otp',
+      };
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -115,8 +118,8 @@ export const authService = {
     };
   },
 
-  async verifyEmail(token: string) {
-    const tokenHash = hashToken(token);
+  async verifyEmail(otp: string) {
+    const tokenHash = hashToken(otp);
     const authToken = await prisma.authToken.findUnique({
       where: { token: tokenHash },
       select: {
@@ -155,27 +158,34 @@ export const authService = {
     });
 
     if (!user) {
-      return;
+      return {
+        message: 'Password reset OTP sent to your email',
+        redirectTo: '/reset-password',
+      };
     }
 
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetTokenHash = hashToken(resetToken);
+    const otp = generateOTP();
+    const otpHash = hashToken(otp);
     const resetExpires = new Date(Date.now() + 60 * 60 * 1000);
 
     await prisma.authToken.create({
       data: {
-        token: resetTokenHash,
+        token: otpHash,
         type: 'PASSWORD_RESET',
         expiresAt: resetExpires,
         user: { connect: { id: user.id } },
       },
     });
 
-    await emailService.sendPasswordResetEmail(normalizedEmail, resetToken);
+    await emailService.sendPasswordResetEmail(normalizedEmail, otp);
+    return {
+      message: 'Password reset OTP sent to your email',
+      redirectTo: '/reset-password',
+    };
   },
 
-  async resetPassword(token: string, newPassword: string) {
-    const tokenHash = hashToken(token);
+  async resetPassword(otp: string, newPassword: string) {
+    const tokenHash = hashToken(otp);
     const authToken = await prisma.authToken.findUnique({
       where: { token: tokenHash },
       select: {
