@@ -130,19 +130,28 @@ export const adminService = {
   },
 
   async deleteAdmin(id: string) {
-    try {
-      await prisma.admin.delete({
-        where: { id },
-      });
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
-        throw new AppError('Admin was not found', 404);
-      }
+    const admin = await prisma.admin.findUnique({
+      where: { id },
+      select: { id: true, deletedAt: true },
+    });
 
-      throw error;
+    if (!admin) {
+      throw new AppError('Admin was not found', 404);
     }
+
+    const activeAdminCount = await prisma.admin.count({
+      where: { role: AdminRole.ADMIN, deletedAt: null },
+    });
+
+    if (activeAdminCount <= 1) {
+      throw new AppError('Cannot delete the sole remaining system administrator.', 400);
+    }
+
+    await prisma.admin.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+
+    return { id };
   },
 };

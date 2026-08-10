@@ -6,4 +6,5 @@ model Admin {
   role         AdminRole @default(ADMIN)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
 }
