@@ -5,32 +5,12 @@ import { prisma } from '../../shared/database/prisma';
 import { AppError } from '../../shared/errors/app-error';
 import { signRefreshToken, signToken, verifyRefreshToken } from '../../shared/utils/jwt';
 import { emailService } from '../../shared/services/email.service';
-
-const userSelect = {
-  id: true,
-  name: true,
-  email: true,
-  image: true,
-  role: true,
-  createdAt: true,
-  updatedAt: true,
-} satisfies Prisma.UserSelect;
+import { userSelect } from './auth.constants';
+import type { LoginInput, RegisterInput } from './auth.types';
 
 const hashToken = (token: string) => crypto.createHash('sha256').update(token).digest('hex');
 const normalizeEmail = (email: string): string => email.trim().toLowerCase();
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
-
-type RegisterInput = {
-  name: string;
-  email: string;
-  password: string;
-  image?: string;
-};
-
-type LoginInput = {
-  email: string;
-  password: string;
-};
 
 export const authService = {
   async register(input: RegisterInput) {

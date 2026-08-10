@@ -1,36 +1,7 @@
-import { Prisma } from '@prisma/client';
 import { prisma } from '../../shared/database/prisma';
 import { AppError } from '../../shared/errors/app-error';
-
-const settingsSelect = {
-  id: true,
-  siteNameAr: true,
-  siteNameEn: true,
-  aboutUsTextAr: true,
-  aboutUsTextEn: true,
-  logoUrl: true,
-  aboutUsImageUrl: true,
-  contactPhone: true,
-  contactEmail: true,
-  totalBeneficiaries: true,
-  foodBaskets: true,
-  yearsOfGiving: true,
-  updatedAt: true,
-} satisfies Prisma.PlatformSettingsSelect;
-
-type UpdateSettingsInput = {
-  siteNameAr?: string;
-  siteNameEn?: string;
-  aboutUsTextAr?: string;
-  aboutUsTextEn?: string;
-  logoUrl?: string | null;
-  aboutUsImageUrl?: string | null;
-  contactPhone?: string | null;
-  contactEmail?: string | null;
-  totalBeneficiaries?: number;
-  foodBaskets?: number;
-  yearsOfGiving?: number;
-};
+import { settingsSelect } from './settings.constants';
+import type { UpdateSettingsInput } from './settings.types';
 
 export const settingsService = {
   async getSettings() {

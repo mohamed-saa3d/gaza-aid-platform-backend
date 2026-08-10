@@ -1,22 +1,8 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../shared/database/prisma';
 import { AppError } from '../../shared/errors/app-error';
-
-const userSelect = {
-  id: true,
-  name: true,
-  email: true,
-  image: true,
-  role: true,
-  createdAt: true,
-  updatedAt: true,
-} satisfies Prisma.UserSelect;
-
-type UpdateProfileInput = {
-  userId: string;
-  name?: string;
-  image?: string | null;
-};
+import { userSelect } from './users.constants';
+import type { UpdateProfileInput } from './users.types';
 
 export const usersService = {
   async getProfile(userId: string) {

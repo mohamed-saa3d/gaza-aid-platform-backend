@@ -1,39 +1,8 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../shared/database/prisma';
 import { AppError } from '../../shared/errors/app-error';
-
-const newsSelect = {
-  id: true,
-  titleAr: true,
-  titleEn: true,
-  descriptionAr: true,
-  descriptionEn: true,
-  image: true,
-  detailsUrl: true,
-  isUrgent: true,
-  createdAt: true,
-} satisfies Prisma.NewsSelect;
-
-type CreateNewsInput = {
-  titleAr: string;
-  titleEn: string;
-  descriptionAr: string;
-  descriptionEn: string;
-  image: string;
-  detailsUrl?: string | null;
-  isUrgent?: boolean;
-};
-
-type UpdateNewsInput = {
-  id: string;
-  titleAr?: string;
-  titleEn?: string;
-  descriptionAr?: string;
-  descriptionEn?: string;
-  image?: string;
-  detailsUrl?: string | null;
-  isUrgent?: boolean;
-};
+import { newsSelect } from './news.constants';
+import type { CreateNewsInput, UpdateNewsInput } from './news.types';
 
 export const newsService = {
   async getNewsList(page = 1, limit = 10) {

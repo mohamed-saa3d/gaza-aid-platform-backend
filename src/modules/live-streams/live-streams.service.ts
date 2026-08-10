@@ -1,30 +1,8 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../shared/database/prisma';
 import { AppError } from '../../shared/errors/app-error';
-
-const liveStreamSelect = {
-  id: true,
-  titleAr: true,
-  titleEn: true,
-  youtubeUrl: true,
-  isActive: true,
-  createdAt: true,
-} satisfies Prisma.LiveStreamSelect;
-
-type CreateLiveStreamInput = {
-  titleAr: string;
-  titleEn: string;
-  youtubeUrl: string;
-  isActive?: boolean;
-};
-
-type UpdateLiveStreamInput = {
-  id: string;
-  titleAr?: string;
-  titleEn?: string;
-  youtubeUrl?: string;
-  isActive?: boolean;
-};
+import { liveStreamSelect } from './live-streams.constants';
+import type { CreateLiveStreamInput, UpdateLiveStreamInput } from './live-streams.types';
 
 export const liveStreamsService = {
   async getLiveStreams(page = 1, limit = 10) {

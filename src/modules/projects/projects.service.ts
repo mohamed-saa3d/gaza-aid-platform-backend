@@ -18,9 +18,10 @@ export const projectsService = {
     limit = 10,
     status?: ProjectStatus | 'ALL',
   ) {
-    const where = status && status !== 'ALL'
-      ? { status }
-      : {};
+    const where = {
+      deletedAt: null,
+      ...(status && status !== 'ALL' ? { status } : {}),
+    };
 
     const [total, projects] = await prisma.$transaction([
       prisma.project.count({ where }),
@@ -45,8 +46,8 @@ export const projectsService = {
   },
 
   async getProjectById(id: string) {
-    const project = await prisma.project.findUnique({
-      where: { id },
+    const project = await prisma.project.findFirst({
+      where: { id, deletedAt: null },
       select: projectSelect,
     });
 
@@ -62,9 +63,9 @@ export const projectsService = {
 
   async getProjectStats() {
     const [total, completed] = await prisma.$transaction([
-      prisma.project.count(),
+      prisma.project.count({ where: { deletedAt: null } }),
       prisma.project.count({
-        where: { status: ProjectStatus.COMPLETED },
+        where: { deletedAt: null, status: ProjectStatus.COMPLETED },
       }),
     ]);
 
@@ -122,6 +123,7 @@ export const projectsService = {
         collectedAmount: true,
         targetAmount: true,
         status: true,
+        updatedAt: true,
       },
     });
 
@@ -135,20 +137,35 @@ export const projectsService = {
       ? ProjectStatus.COMPLETED
       : sanitizedInput.status ?? existingProject.status;
 
-    return prisma.project.update({
-      where: { id: sanitizedInput.id },
-      data: {
-        ...(sanitizedInput.titleAr ? { titleAr: sanitizedInput.titleAr.trim() } : {}),
-        ...(sanitizedInput.titleEn ? { titleEn: sanitizedInput.titleEn.trim() } : {}),
-        ...(sanitizedInput.descriptionAr ? { descriptionAr: sanitizedInput.descriptionAr.trim() } : {}),
-        ...(sanitizedInput.descriptionEn ? { descriptionEn: sanitizedInput.descriptionEn.trim() } : {}),
-        ...(sanitizedInput.imageUrl !== undefined ? { imageUrl: sanitizedInput.imageUrl } : {}),
-        ...(sanitizedInput.targetAmount !== undefined ? { targetAmount: sanitizedInput.targetAmount } : {}),
-        ...(sanitizedInput.categoryId ? { category: { connect: { id: sanitizedInput.categoryId } } } : {}),
-        status: updatedStatus,
-      },
-      select: projectSelect,
-    });
+    try {
+      return await prisma.project.update({
+        where: {
+          id: sanitizedInput.id,
+          updatedAt: existingProject.updatedAt,
+        },
+        data: {
+          ...(sanitizedInput.titleAr ? { titleAr: sanitizedInput.titleAr.trim() } : {}),
+          ...(sanitizedInput.titleEn ? { titleEn: sanitizedInput.titleEn.trim() } : {}),
+          ...(sanitizedInput.descriptionAr ? { descriptionAr: sanitizedInput.descriptionAr.trim() } : {}),
+          ...(sanitizedInput.descriptionEn ? { descriptionEn: sanitizedInput.descriptionEn.trim() } : {}),
+          ...(sanitizedInput.imageUrl !== undefined ? { imageUrl: sanitizedInput.imageUrl } : {}),
+          ...(sanitizedInput.targetAmount !== undefined ? { targetAmount: sanitizedInput.targetAmount } : {}),
+          ...(sanitizedInput.categoryId ? { category: { connect: { id: sanitizedInput.categoryId } } } : {}),
+          status: updatedStatus,
+        },
+        select: projectSelect,
+      });
+    } catch (error) {
+      if (
+        error instanceof AppError ||
+        (error instanceof Error && error.name === 'PrismaClientKnownRequestError' &&
+          (error as any).code === 'P2025')
+      ) {
+        throw new AppError('Project was not found or already modified during update', 409);
+      }
+
+      throw error;
+    }
   },
 
   async deleteProject(id: string) {
@@ -168,7 +185,11 @@ export const projectsService = {
       throw new AppError('Cannot delete a project that has received donations.', 400);
     }
 
-    await prisma.project.delete({ where: { id } });
+    await prisma.project.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+
     return { id };
   },
 };

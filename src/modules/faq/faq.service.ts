@@ -1,34 +1,8 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../shared/database/prisma';
 import { AppError } from '../../shared/errors/app-error';
-
-const faqSelect = {
-  id: true,
-  questionAr: true,
-  questionEn: true,
-  answerAr: true,
-  answerEn: true,
-  isActive: true,
-  createdAt: true,
-  updatedAt: true,
-} satisfies Prisma.FAQSelect;
-
-type CreateFaqInput = {
-  questionAr: string;
-  questionEn: string;
-  answerAr: string;
-  answerEn: string;
-  isActive?: boolean;
-};
-
-type UpdateFaqInput = {
-  id: string;
-  questionAr?: string;
-  questionEn?: string;
-  answerAr?: string;
-  answerEn?: string;
-  isActive?: boolean;
-};
+import { faqSelect } from './faq.constants';
+import type { CreateFaqInput, UpdateFaqInput } from './faq.types';
 
 export const faqService = {
   async getFaqs(page = 1, limit = 10) {

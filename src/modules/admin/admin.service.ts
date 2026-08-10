@@ -3,37 +3,12 @@ import bcrypt from 'bcrypt';
 import { prisma } from '../../shared/database/prisma';
 import { AppError } from '../../shared/errors/app-error';
 import { signRefreshToken, signToken } from '../../shared/utils/jwt';
+import { adminSelect } from './admin.constants';
+import type { AdminLoginInput, CreateAdminInput, UpdateAdminInput } from './admin.types';
 
 const PASSWORD_SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS ?? 12);
 
-const adminSelect = {
-  id: true,
-  name: true,
-  email: true,
-  role: true,
-  createdAt: true,
-  updatedAt: true,
-} satisfies Prisma.AdminSelect;
-
-export type CreateAdminInput = {
-  name: string;
-  email: string;
-  password: string;
-  role?: AdminRole;
-};
-
-export type UpdateAdminInput = {
-  id: string;
-  name?: string;
-  role?: AdminRole;
-};
-
 const normalizeEmail = (email: string): string => email.trim().toLowerCase();
-
-type AdminLoginInput = {
-  email: string;
-  password: string;
-};
 
 export const adminService = {
   async createAdmin(input: CreateAdminInput) {
