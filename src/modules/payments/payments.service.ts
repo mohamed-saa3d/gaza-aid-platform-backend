@@ -1,8 +1,8 @@
 import { prisma } from '../../shared/database/prisma';
 import { walletService } from '../wallet/wallet.service';
 import type { CreateCheckoutInput } from './payments.types';
-import { PaymentIntentStatus, PaymentPurpose } from '@prisma/client';
 import { AppError } from '../../shared/errors/app-error';
+import { PaymentIntentStatus, PaymentPurpose, WalletTransactionType } from '@prisma/client';
 
 export const paymentsService = {
   async createCheckoutSession(userId: string, input: CreateCheckoutInput) {
@@ -12,7 +12,7 @@ export const paymentsService = {
         amount: input.amount,
         currency: input.currency ?? 'EGP',
         status: PaymentIntentStatus.PENDING,
-        purpose: input.purpose as PaymentPurpose,
+        purpose: input.purpose,
         referenceId: input.referenceId,
       },
     });
@@ -24,38 +24,34 @@ export const paymentsService = {
   },
 
   async handleGatewayWebhook(input: { paymentIntentId: string; gatewayStatus: 'SUCCESS' | 'FAILED' }) {
-    const updated = await prisma.paymentIntent.updateMany({
-      where: {
-        id: input.paymentIntentId,
-        status: PaymentIntentStatus.PENDING,
-      },
-      data: {
-        status: input.gatewayStatus,
-      },
-    });
-
-    if (updated.count === 0) {
-      return { message: 'Payment intent already processed or not found' };
-    }
-
-    if (input.gatewayStatus === 'SUCCESS') {
-      const intent = await prisma.paymentIntent.findUnique({
+    const result = await prisma.$transaction(async (tx) => {
+      const intent = await tx.paymentIntent.findUnique({
         where: { id: input.paymentIntentId },
       });
 
-      if (!intent) {
-        throw new AppError('Payment intent not found after update', 500);
+      if (!intent || intent.status !== PaymentIntentStatus.PENDING) {
+        return { message: 'Payment intent already processed or not found' };
       }
 
-      if (intent.purpose === PaymentPurpose.WALLET_FUNDING) {
-        await walletService.processTransaction({
-          userId: intent.userId,
-          amount: intent.amount,
-          type: 'DEPOSIT',
-        });
-      }
-    }
+      await tx.paymentIntent.update({
+        where: { id: input.paymentIntentId },
+        data: { status: input.gatewayStatus },
+      });
 
-    return { message: 'Payment webhook received and processed idempotently' };
+      if (input.gatewayStatus === 'SUCCESS' && intent.purpose === PaymentPurpose.WALLET_FUNDING) {
+        await walletService.processTransaction(
+          {
+            userId: intent.userId,
+            amount: intent.amount,
+            type: WalletTransactionType.DEPOSIT,
+          },
+          tx,
+        );
+      }
+
+      return { message: 'Payment webhook received and processed idempotently' };
+    });
+
+    return result;
   },
 };

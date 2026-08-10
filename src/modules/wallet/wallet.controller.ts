@@ -4,6 +4,7 @@ import { requireUser } from '../../shared/authorization';
 import { validateRequest } from '../../shared/middlewares/validate.middleware';
 import { walletService } from './wallet.service';
 import { depositWalletValidation, withdrawWalletValidation } from './wallet.validation';
+import type { WalletDepositInput, WalletWithdrawInput } from './wallet.types';
 
 const getAuthenticatedUserId = (req: Request): string => {
   if (!req.user?.id) {
@@ -47,13 +48,13 @@ export const getMyTransactions: RequestHandler = async (req, res, next) => {
 export const depositToWallet: RequestHandler = async (req, res, next) => {
   try {
     const userId = getAuthenticatedUserId(req);
-    const { amount, currency } = req.body as { amount: number; currency?: string };
+    const payload = req.body as WalletDepositInput;
 
     const transaction = await walletService.processTransaction({
       userId,
-      amount,
+      amount: payload.amount,
       type: 'DEPOSIT',
-      currency,
+      currency: payload.currency,
     });
 
     res.status(201).json({
@@ -69,11 +70,11 @@ export const depositToWallet: RequestHandler = async (req, res, next) => {
 export const withdrawFromWallet: RequestHandler = async (req, res, next) => {
   try {
     const userId = getAuthenticatedUserId(req);
-    const { amount } = req.body as { amount: number };
+    const payload = req.body as WalletWithdrawInput;
 
     const transaction = await walletService.processTransaction({
       userId,
-      amount: -Math.abs(amount),
+      amount: -Math.abs(payload.amount),
       type: 'WITHDRAWAL',
     });
 
