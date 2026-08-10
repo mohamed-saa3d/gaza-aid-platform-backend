@@ -5,7 +5,6 @@ import type { SubmitRatingInput } from './ratings.types';
 
 export const submitRating: RequestHandler = async (req, res, next) => {
   try {
-    const projectId = String(req.params.projectId);
     const payload = req.body as SubmitRatingInput;
     const userId = req.user?.id;
 
@@ -13,11 +12,11 @@ export const submitRating: RequestHandler = async (req, res, next) => {
       throw new AppError('Authentication is required', 401);
     }
 
-    const rating = await ratingsService.submitRating(userId, projectId, payload);
+    const rating = await ratingsService.submitRating(userId, payload);
 
     res.status(201).json({
       success: true,
-      message: 'Rating submitted successfully',
+      message: 'Platform rating submitted successfully',
       data: rating,
     });
   } catch (error) {
@@ -25,18 +24,31 @@ export const submitRating: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const getProjectRatings: RequestHandler = async (req, res, next) => {
+export const getPlatformRatings: RequestHandler = async (req, res, next) => {
   try {
-    const projectId = String(req.params.projectId);
     const page = Number(req.query.page ?? 1);
     const limit = Number(req.query.limit ?? 10);
 
-    const ratings = await ratingsService.getProjectRatings(projectId, page, limit);
+    const ratings = await ratingsService.getPlatformRatings(page, limit);
 
     res.status(200).json({
       success: true,
-      message: 'Project ratings fetched successfully',
+      message: 'Platform ratings fetched successfully',
       data: ratings,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPlatformStats: RequestHandler = async (_req, res, next) => {
+  try {
+    const stats = await ratingsService.getPlatformStats();
+
+    res.status(200).json({
+      success: true,
+      message: 'Platform rating stats fetched successfully',
+      data: stats,
     });
   } catch (error) {
     next(error);
