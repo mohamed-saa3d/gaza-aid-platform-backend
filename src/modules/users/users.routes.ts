@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { authenticateUser } from '../../shared/middleware/auth.middleware';
-import { validateRequest } from '../../shared/middleware/validate.middleware';
+import { authenticateUser } from '../../shared/middlewares/auth.middleware';
+import { validateRequest } from '../../shared/middlewares/validate.middleware';
 import { getProfile, getUserDonations, updateProfile } from './users.controller';
 import { updateProfileSchema } from './users.validation';
 

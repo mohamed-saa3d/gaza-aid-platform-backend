@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { Prisma, Role } from '@prisma/client';
 import { prisma } from '../../shared/database/prisma';
 import { AppError } from '../../shared/errors/app-error';
-import { signToken } from '../../shared/utils/jwt';
+import { signRefreshToken, signToken, verifyRefreshToken } from '../../shared/utils/jwt';
 import { emailService } from '../../shared/services/email.service';
 
 const userSelect = {
@@ -47,7 +47,7 @@ export const authService = {
     const passwordHash = await bcrypt.hash(input.password, 12);
     const otp = generateOTP();
     const otpHash = hashToken(otp);
-    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const verificationExpires = new Date(Date.now() + 15 * 60 * 1000);
 
     try {
       await prisma.user.create({
@@ -99,13 +99,19 @@ export const authService = {
       throw new AppError('Invalid email or password', 401);
     }
 
-    const token = signToken({
+    const accessToken = signToken({
+      id: user.id,
+      role: user.role,
+    });
+
+    const refreshToken = signRefreshToken({
       id: user.id,
       role: user.role,
     });
 
     return {
-      token,
+      accessToken,
+      refreshToken,
       user: {
         id: user.id,
         name: user.name,
@@ -115,6 +121,26 @@ export const authService = {
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
+    };
+  },
+
+  async refreshAccessToken(refreshToken: string) {
+    const payload = verifyRefreshToken(refreshToken);
+
+    const user = await prisma.user.findUnique({
+      where: { id: payload.id },
+      select: { id: true },
+    });
+
+    if (!user) {
+      throw new AppError('Refresh token is invalid or user no longer exists', 401);
+    }
+
+    return {
+      accessToken: signToken({
+        id: user.id,
+        role: payload.role,
+      }),
     };
   },
 
@@ -166,7 +192,7 @@ export const authService = {
 
     const otp = generateOTP();
     const otpHash = hashToken(otp);
-    const resetExpires = new Date(Date.now() + 60 * 60 * 1000);
+    const resetExpires = new Date(Date.now() + 15 * 60 * 1000);
 
     await prisma.authToken.create({
       data: {

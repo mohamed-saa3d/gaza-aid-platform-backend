@@ -17,3 +17,15 @@ export const signToken = (payload: AuthTokenPayload): string => {
 export const verifyToken = (token: string): AuthTokenPayload => {
   return jwt.verify(token, env.JWT_SECRET) as AuthTokenPayload;
 };
+
+export const signRefreshToken = (payload: AuthTokenPayload): string => {
+  const options: SignOptions = {
+    expiresIn: env.JWT_REFRESH_EXPIRES_IN as SignOptions['expiresIn'],
+  };
+
+  return jwt.sign(payload, env.JWT_REFRESH_SECRET, options);
+};
+
+export const verifyRefreshToken = (token: string): AuthTokenPayload => {
+  return jwt.verify(token, env.JWT_REFRESH_SECRET) as AuthTokenPayload;
+};

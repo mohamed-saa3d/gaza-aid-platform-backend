@@ -26,12 +26,22 @@ export const register: RequestHandler = async (req, res, next) => {
 
 export const login: RequestHandler = async (req, res, next) => {
   try {
-    const data = await authService.login(req.body);
+    const { accessToken, refreshToken, user } = await authService.login(req.body);
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
 
     res.status(200).json({
       success: true,
       message: 'User logged in successfully',
-      data,
+      data: {
+        accessToken,
+        user,
+      },
     });
   } catch (error) {
     next(error);
@@ -59,6 +69,26 @@ export const forgotPassword: RequestHandler = async (req, res, next) => {
       success: true,
       message,
       data: { redirectTo },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const refreshToken: RequestHandler = async (req, res, next) => {
+  try {
+    const refreshToken = req.cookies?.refreshToken;
+
+    if (!refreshToken) {
+      throw new AppError('Refresh token cookie is missing', 401);
+    }
+
+    const { accessToken } = await authService.refreshAccessToken(refreshToken);
+
+    res.status(200).json({
+      success: true,
+      message: 'Access token refreshed successfully',
+      data: { accessToken },
     });
   } catch (error) {
     next(error);

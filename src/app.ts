@@ -1,3 +1,4 @@
+import cookieParser from 'cookie-parser';
 import express from 'express';
 import { adminRoutes } from './modules/admin/admin.routes';
 import { authRoutes } from './modules/auth/auth.routes';
@@ -11,12 +12,13 @@ import { liveStreamsRoutes } from './modules/live-streams/live-streams.routes';
 import { subscribersRoutes } from './modules/subscribers/subscribers.routes';
 import { ratingsRoutes } from './modules/ratings/ratings.routes';
 import { settingsRoutes } from './modules/settings/settings.routes';
-import { requestLoggerMiddleware } from './shared/middleware/request-logger.middleware';
+import { requestLoggerMiddleware } from './shared/middlewares/request-logger.middleware';
 import { errorMiddleware } from './shared/errors/error.middleware';
 
 export const app = express();
 
 app.use(express.json());
+app.use(cookieParser());
 app.use(requestLoggerMiddleware);
 
 app.get('/health', (_req, res) => {

@@ -28,6 +28,12 @@ export const forgotPasswordSchema = z.object({
   }),
 });
 
+export const refreshTokenSchema = z.object({
+  body: z.object({
+    refreshToken: z.string().min(1, 'Refresh token is required'),
+  }),
+});
+
 export const resetPasswordSchema = z.object({
   body: z.object({
     otp: z.string().trim().regex(/^[0-9]{6}$/, 'OTP must be a 6-digit number'),
