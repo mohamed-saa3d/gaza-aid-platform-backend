@@ -1,50 +1,8 @@
-import { Prisma, ProjectStatus } from '@prisma/client';
+import { ProjectStatus } from '@prisma/client';
 import { prisma } from '../../shared/database/prisma';
 import { AppError } from '../../shared/errors/app-error';
-
-const projectSelect = {
-  id: true,
-  titleAr: true,
-  titleEn: true,
-  descriptionAr: true,
-  descriptionEn: true,
-  imageUrl: true,
-  targetAmount: true,
-  collectedAmount: true,
-  status: true,
-  category: {
-    select: {
-      id: true,
-      nameAr: true,
-      nameEn: true,
-    },
-  },
-  createdAt: true,
-  updatedAt: true,
-} satisfies Prisma.ProjectSelect;
-
-type CreateProjectInput = {
-  titleAr: string;
-  titleEn: string;
-  descriptionAr: string;
-  descriptionEn: string;
-  imageUrl?: string;
-  targetAmount: number;
-  status: ProjectStatus;
-  categoryId: string;
-};
-
-type UpdateProjectInput = {
-  id: string;
-  titleAr?: string;
-  titleEn?: string;
-  descriptionAr?: string;
-  descriptionEn?: string;
-  imageUrl?: string | null;
-  targetAmount?: number;
-  status?: ProjectStatus;
-  categoryId?: string;
-};
+import { projectSelect } from './projects.constants';
+import type { CreateProjectInput, UpdateProjectInput } from './projects.types';
 
 const calculateProgressPercentage = (collectedAmount: number, targetAmount: number): number => {
   if (targetAmount <= 0) {
@@ -103,10 +61,12 @@ export const projectsService = {
   },
 
   async getProjectStats() {
-    const total = await prisma.project.count();
-    const completed = await prisma.project.count({
-      where: { status: ProjectStatus.COMPLETED },
-    });
+    const [total, completed] = await prisma.$transaction([
+      prisma.project.count(),
+      prisma.project.count({
+        where: { status: ProjectStatus.COMPLETED },
+      }),
+    ]);
 
     return {
       totalProjects: total,
@@ -116,10 +76,7 @@ export const projectsService = {
   },
 
   async createProject(input: CreateProjectInput) {
-    const { collectedAmount, raisedAmount, ...sanitizedInput } = input as CreateProjectInput & {
-      collectedAmount?: unknown;
-      raisedAmount?: unknown;
-    };
+    const sanitizedInput = input;
 
     const category = await prisma.category.findUnique({
       where: { id: sanitizedInput.categoryId },
@@ -146,10 +103,7 @@ export const projectsService = {
   },
 
   async updateProject(input: UpdateProjectInput) {
-    const { collectedAmount, raisedAmount, ...sanitizedInput } = input as UpdateProjectInput & {
-      collectedAmount?: unknown;
-      raisedAmount?: unknown;
-    };
+    const sanitizedInput = input;
 
     if (sanitizedInput.categoryId) {
       const category = await prisma.category.findUnique({
