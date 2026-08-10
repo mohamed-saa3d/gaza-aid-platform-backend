@@ -37,6 +37,13 @@ export const handlePaymentWebhook: RequestHandler = async (req, res, next) => {
 
     const donation = await donationsService.handlePaymentWebhook({ donationId, transactionId });
 
+    if ('message' in donation && donation.message.includes('already processed')) {
+      return res.status(200).json({
+        success: true,
+        message: 'Webhook received and processed idempotently',
+      });
+    }
+
     res.status(200).json({
       success: true,
       message: 'Payment webhook processed successfully',
