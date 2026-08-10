@@ -11,7 +11,7 @@ export const createProjectSchema = z.object({
     targetAmount: z.number().positive('Target amount must be positive'),
     status: z.nativeEnum(ProjectStatus),
     categoryId: z.string().trim().min(1, 'Category ID is required'),
-  }),
+  }).strict(),
 });
 
 export const updateProjectSchema = z.object({
@@ -26,5 +26,5 @@ export const updateProjectSchema = z.object({
     categoryId: z.string().trim().min(1).optional(),
   }).refine((data) => Object.keys(data).length > 0, {
     message: 'At least one field must be provided',
-  }),
+  }).strict(),
 });

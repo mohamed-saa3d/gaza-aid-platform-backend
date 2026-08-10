@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { loginLimiter } from '../../shared/middlewares/rate-limiter.middleware';
-import { requireAdmin } from '../../shared/middlewares/auth.middleware';
+import { requireAdmin } from '../../shared/authorization';
 import { validateRequest } from '../../shared/middlewares/validate.middleware';
 import {
   adminLogin,

@@ -83,7 +83,8 @@ export const getProject: RequestHandler = async (req, res, next) => {
 
 export const createProject: RequestHandler = async (req, res, next) => {
   try {
-    const project = await projectsService.createProject(req.body);
+    const { collectedAmount, raisedAmount, ...projectPayload } = req.body;
+    const project = await projectsService.createProject(projectPayload);
 
     res.status(201).json({
       success: true,
@@ -103,7 +104,8 @@ export const updateProject: RequestHandler = async (req, res, next) => {
       throw new AppError('Invalid project ID', 400);
     }
 
-    const project = await projectsService.updateProject({ id, ...req.body });
+    const { collectedAmount, raisedAmount, ...projectPayload } = req.body;
+    const project = await projectsService.updateProject({ id, ...projectPayload });
 
     res.status(200).json({
       success: true,
@@ -114,6 +116,21 @@ export const updateProject: RequestHandler = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getProjectStats: RequestHandler = async (_req, res, next) => {
+  try {
+    const stats = await projectsService.getProjectStats();
+
+    res.status(200).json({
+      success: true,
+      message: 'Project stats fetched successfully',
+      data: stats,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 export const deleteProject: RequestHandler = async (req, res, next) => {
   try {

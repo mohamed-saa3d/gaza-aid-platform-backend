@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import { authenticateUser } from '../../shared/middlewares/auth.middleware';
+import { requireUser } from '../../shared/authorization';
 import { validateRequest } from '../../shared/middlewares/validate.middleware';
 import { getProfile, getUserDonations, updateProfile } from './users.controller';
 import { updateProfileSchema } from './users.validation';
 
 export const usersRoutes = Router();
 
-usersRoutes.get('/me', authenticateUser, getProfile);
-usersRoutes.put('/me', authenticateUser, validateRequest(updateProfileSchema), updateProfile);
-usersRoutes.get('/me/donations', authenticateUser, getUserDonations);
+usersRoutes.get('/me', requireUser, getProfile);
+usersRoutes.put('/me', requireUser, validateRequest(updateProfileSchema), updateProfile);
+usersRoutes.get('/me/donations', requireUser, getUserDonations);
