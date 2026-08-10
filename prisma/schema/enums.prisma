@@ -35,3 +35,14 @@ enum WalletTransactionStatus {
   SUCCESS
   FAILED
 }
+
+enum PaymentIntentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum PaymentPurpose {
+  WALLET_FUNDING
+  DIRECT_DONATION
+}
