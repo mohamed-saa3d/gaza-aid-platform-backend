@@ -51,33 +51,48 @@ export const donationsService = {
       throw new AppError('Donation was not found', 404);
     }
 
-    if (donation.status === DonationStatus.SUCCESS) {
-      return prisma.donation.findUnique({
-        where: { id: input.donationId },
-        select: donationSelect,
-      });
-    }
-
-    const [updatedDonation] = await prisma.$transaction([
-      prisma.donation.update({
-        where: { id: input.donationId },
+    const result = await prisma.$transaction(async (tx) => {
+      const updateResult = await tx.donation.updateMany({
+        where: {
+          id: input.donationId,
+          status: DonationStatus.PENDING,
+        },
         data: {
           status: DonationStatus.SUCCESS,
           transactionId: input.transactionId.trim(),
         },
-        select: donationSelect,
-      }),
-      prisma.project.update({
+      });
+
+      if (updateResult.count === 0) {
+        return { message: 'Donation already processed or invalid' } as const;
+      }
+
+      await tx.project.update({
         where: { id: donation.projectId! },
         data: {
           collectedAmount: {
             increment: donation.amount,
           },
         },
-      }),
-    ]);
+      });
 
-    return updatedDonation;
+      const updatedDonation = await tx.donation.findUnique({
+        where: { id: input.donationId },
+        select: donationSelect,
+      });
+
+      if (!updatedDonation) {
+        throw new AppError('Donation update failed', 500);
+      }
+
+      return updatedDonation;
+    });
+
+    if ('message' in result) {
+      return result;
+    }
+
+    return result;
   },
 
   async getAllDonations(page = 1, limit = 10) {
