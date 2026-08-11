@@ -2,7 +2,9 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
+import swaggerUi from 'swagger-ui-express';
 import { env } from './config/env';
+import { swaggerSpec } from './config/swagger';
 import { adminRoutes } from './modules/admin/admin.routes';
 import { authRoutes } from './modules/auth/auth.routes';
 import { usersRoutes } from './modules/users/users.routes';
@@ -50,6 +52,8 @@ app.use(globalRateLimiter);
 app.get('/health', (_req, res) => {
   res.status(200).json({ success: true, message: 'Backend is healthy' });
 });
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use(`${env.API_PREFIX}/admin`, adminRoutes);
 app.use(`${env.API_PREFIX}/auth`, authRoutes);
