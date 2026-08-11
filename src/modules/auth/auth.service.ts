@@ -34,8 +34,8 @@ export const authService = {
         data: {
           name: input.name.trim(),
           email,
-          passwordHash,
-          image: input.image,
+          password: passwordHash,
+          avatar: input.image,
           role: Role.DONOR,
           tokens: {
             create: {
@@ -73,7 +73,7 @@ export const authService = {
       throw new AppError('Invalid email or password', 401);
     }
 
-    const isPasswordValid = await bcrypt.compare(input.password, user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(input.password, user.password);
 
     if (!isPasswordValid) {
       throw new AppError('Invalid email or password', 401);
@@ -96,7 +96,7 @@ export const authService = {
         id: user.id,
         name: user.name,
         email: user.email,
-        image: user.image,
+        avatar: user.avatar,
         role: user.role,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
@@ -214,7 +214,7 @@ export const authService = {
     const [user] = await prisma.$transaction([
       prisma.user.update({
         where: { id: authToken.userId },
-        data: { passwordHash },
+        data: { password: passwordHash },
         select: userSelect,
       }),
       prisma.authToken.delete({ where: { id: authToken.id } }),
@@ -226,14 +226,14 @@ export const authService = {
   async changePassword(userId: string, oldPassword: string, newPassword: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { passwordHash: true },
+      select: { password: true },
     });
 
     if (!user) {
       throw new AppError('User was not found', 404);
     }
 
-    const isPasswordValid = await bcrypt.compare(oldPassword, user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
 
     if (!isPasswordValid) {
       throw new AppError('Old password is incorrect', 401);
@@ -242,7 +242,7 @@ export const authService = {
     const passwordHash = await bcrypt.hash(newPassword, 12);
     return prisma.user.update({
       where: { id: userId },
-      data: { passwordHash },
+      data: { password: passwordHash },
       select: userSelect,
     });
   },

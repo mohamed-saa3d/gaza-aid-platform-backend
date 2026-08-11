@@ -2,10 +2,11 @@ model User {
   id              String   @id @default(auto()) @map("_id") @db.ObjectId
   name            String
   email           String   @unique
-  passwordHash    String
-  image           String?
+  password        String   @map("passwordHash")
+  avatar          String?  @map("image")
   role            Role     @default(DONOR)
   isEmailVerified Boolean  @default(false)
+  deletedAt       DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

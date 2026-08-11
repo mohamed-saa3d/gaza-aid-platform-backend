@@ -1,11 +1,21 @@
 import { Router } from 'express';
-import { requireUser } from '../../shared/authorization';
+import { requireAdmin, requireUser } from '../../shared/authorization';
 import { validateRequest } from '../../shared/middlewares/validate.middleware';
-import { getProfile, getUserDonations, updateProfile } from './users.controller';
-import { updateProfileSchema } from './users.validation';
+import {
+  changePassword,
+  getAllUsers,
+  getProfile,
+  getUserDonations,
+  softDeleteAccount,
+  updateProfile,
+} from './users.controller';
+import { changePasswordSchema, updateProfileSchema } from './users.validation';
 
 export const usersRoutes = Router();
 
-usersRoutes.get('/me', requireUser, getProfile);
-usersRoutes.put('/me', requireUser, validateRequest(updateProfileSchema), updateProfile);
+usersRoutes.get('/profile', requireUser, getProfile);
+usersRoutes.patch('/profile', requireUser, validateRequest(updateProfileSchema), updateProfile);
+usersRoutes.post('/change-password', requireUser, validateRequest(changePasswordSchema), changePassword);
+usersRoutes.delete('/account', requireUser, softDeleteAccount);
+usersRoutes.get('/admin/all', requireAdmin, getAllUsers);
 usersRoutes.get('/me/donations', requireUser, getUserDonations);
