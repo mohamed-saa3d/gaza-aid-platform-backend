@@ -1,6 +1,7 @@
 {
   "prisma": {
-    "schema": "prisma/schema"
+    "schema": "prisma/schema",
+    "seed": "tsx prisma/seed.ts"
   },
   "scripts": {
     "dev": "concurrently \"tsx watch src/server.ts\"",
