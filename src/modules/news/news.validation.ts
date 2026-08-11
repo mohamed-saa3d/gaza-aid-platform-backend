@@ -5,7 +5,7 @@ const newsBase = {
   titleEn: z.string().trim().min(2, 'English title is required'),
   descriptionAr: z.string().trim().min(10, 'Arabic description is required'),
   descriptionEn: z.string().trim().min(10, 'English description is required'),
-  image: z.string().trim().url('Invalid image URL'),
+  imageUrl: z.string().trim().url('Must be a valid URL'),
   detailsUrl: z.string().trim().url('Invalid details URL').optional(),
   isUrgent: z.boolean().optional(),
 };

@@ -4,7 +4,7 @@ model News {
   titleEn       String
   descriptionAr String
   descriptionEn String
-  image         String
+  imageUrl      String
   detailsUrl    String?
   isUrgent      Boolean  @default(false)
   createdAt     DateTime @default(now())

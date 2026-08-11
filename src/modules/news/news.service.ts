@@ -39,7 +39,7 @@ export const newsService = {
         titleEn: input.titleEn.trim(),
         descriptionAr: input.descriptionAr.trim(),
         descriptionEn: input.descriptionEn.trim(),
-        image: input.image.trim(),
+        imageUrl: input.imageUrl.trim(),
         detailsUrl: input.detailsUrl?.trim() || null,
         isUrgent: input.isUrgent ?? false,
       },
@@ -56,7 +56,7 @@ export const newsService = {
           ...(input.titleEn !== undefined ? { titleEn: input.titleEn.trim() } : {}),
           ...(input.descriptionAr !== undefined ? { descriptionAr: input.descriptionAr.trim() } : {}),
           ...(input.descriptionEn !== undefined ? { descriptionEn: input.descriptionEn.trim() } : {}),
-          ...(input.image !== undefined ? { image: input.image.trim() } : {}),
+          ...(input.imageUrl !== undefined ? { imageUrl: input.imageUrl.trim() } : {}),
           ...(input.detailsUrl !== undefined
             ? { detailsUrl: input.detailsUrl?.trim() || null }
             : {}),

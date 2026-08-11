@@ -6,7 +6,7 @@ export const newsSelect = {
   titleEn: true,
   descriptionAr: true,
   descriptionEn: true,
-  image: true,
+  imageUrl: true,
   detailsUrl: true,
   isUrgent: true,
   createdAt: true,
