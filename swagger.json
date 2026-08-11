@@ -1,0 +1,2057 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Qaza Platform API",
+    "version": "1.0.0",
+    "description": "API documentation for Qaza Platform backend"
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Admin"
+    },
+    {
+      "name": "Auth"
+    },
+    {
+      "name": "Users"
+    },
+    {
+      "name": "Projects"
+    },
+    {
+      "name": "Donations"
+    },
+    {
+      "name": "Payments"
+    },
+    {
+      "name": "Wallets"
+    },
+    {
+      "name": "News"
+    },
+    {
+      "name": "FAQ"
+    },
+    {
+      "name": "Live-Streams"
+    },
+    {
+      "name": "Subscribers"
+    },
+    {
+      "name": "Ratings"
+    },
+    {
+      "name": "Settings"
+    }
+  ],
+  "paths": {
+    "/api/wallets/me": {
+      "get": {
+        "tags": [
+          "Wallets"
+        ],
+        "summary": "Get the authenticated user wallet",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Wallet fetched successfully"
+          },
+          "401": {
+            "description": "Authentication is required"
+          },
+          "404": {
+            "description": "Wallet was not found"
+          }
+        }
+      }
+    },
+    "/api/wallets/me/transactions": {
+      "get": {
+        "tags": [
+          "Wallets"
+        ],
+        "summary": "List authenticated user wallet transactions",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Wallet transactions fetched successfully"
+          },
+          "401": {
+            "description": "Authentication is required"
+          },
+          "404": {
+            "description": "Wallet was not found"
+          }
+        }
+      }
+    },
+    "/api/wallets/me/deposit": {
+      "post": {
+        "tags": [
+          "Wallets"
+        ],
+        "summary": "Deposit funds into the authenticated wallet",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "amount": 100,
+                "currency": "USD"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Wallet deposit initialized successfully"
+          },
+          "400": {
+            "description": "Invalid deposit amount or currency"
+          },
+          "401": {
+            "description": "Authentication is required"
+          },
+          "404": {
+            "description": "Wallet was not found"
+          }
+        }
+      }
+    },
+    "/api/wallets/me/withdraw": {
+      "post": {
+        "tags": [
+          "Wallets"
+        ],
+        "summary": "Withdraw funds from the authenticated wallet",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "amount": 50
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Withdrawal completed successfully"
+          },
+          "400": {
+            "description": "Invalid amount or insufficient balance"
+          },
+          "401": {
+            "description": "Authentication is required"
+          },
+          "404": {
+            "description": "Wallet was not found"
+          }
+        }
+      }
+    },
+    "/api/users/profile": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get the authenticated user profile",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User profile fetched successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "message": "User profile fetched successfully",
+                  "data": {
+                    "id": "65f000000000000000000001",
+                    "name": "Ahmed Ali",
+                    "email": "donor@example.com",
+                    "avatar": null,
+                    "role": "DONOR"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication is required"
+          },
+          "404": {
+            "description": "User was not found"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Update the authenticated user profile",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "name": "Ahmed Hassan",
+                "avatar": "https://cdn.example.com/avatar.jpg"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User profile updated successfully"
+          },
+          "400": {
+            "description": "Invalid profile data"
+          },
+          "401": {
+            "description": "Authentication is required"
+          },
+          "404": {
+            "description": "User was not found"
+          }
+        }
+      }
+    },
+    "/api/users/change-password": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Change the authenticated user password",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "oldPassword": "OldPass123",
+                "newPassword": "NewPass123"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password changed successfully"
+          },
+          "400": {
+            "description": "Password validation failed"
+          },
+          "401": {
+            "description": "Authentication failed or old password is incorrect"
+          },
+          "404": {
+            "description": "User was not found"
+          }
+        }
+      }
+    },
+    "/api/users/account": {
+      "delete": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Soft-delete the authenticated account",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User account soft deleted successfully"
+          },
+          "401": {
+            "description": "Authentication is required"
+          },
+          "404": {
+            "description": "User was not found"
+          }
+        }
+      }
+    },
+    "/api/users/admin/all": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "List active users for administrators",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 10
+            },
+            "example": 10
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Active users fetched successfully"
+          },
+          "401": {
+            "description": "Admin authentication required"
+          },
+          "404": {
+            "description": "Users were not found"
+          }
+        }
+      }
+    },
+    "/api/users/me/donations": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get donations belonging to the authenticated user",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User donations fetched successfully"
+          },
+          "401": {
+            "description": "Authentication is required"
+          },
+          "404": {
+            "description": "User was not found"
+          }
+        }
+      }
+    },
+    "/api/subscribers": {
+      "post": {
+        "tags": [
+          "Subscribers"
+        ],
+        "summary": "Subscribe an email address",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "email": "supporter@example.com"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Subscriber created successfully"
+          },
+          "400": {
+            "description": "Invalid email address"
+          },
+          "404": {
+            "description": "Subscriber service was not found"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Subscribers"
+        ],
+        "summary": "List subscribers for administrators",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Subscribers fetched successfully"
+          },
+          "401": {
+            "description": "Admin authentication required"
+          },
+          "404": {
+            "description": "Subscribers were not found"
+          }
+        }
+      }
+    },
+    "/api/subscribers/count": {
+      "get": {
+        "tags": [
+          "Subscribers"
+        ],
+        "summary": "Get the subscriber count",
+        "responses": {
+          "200": {
+            "description": "Subscriber count fetched successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "count": 1250
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Subscriber count was not found"
+          }
+        }
+      }
+    },
+    "/api/subscribers/broadcast": {
+      "post": {
+        "tags": [
+          "Subscribers"
+        ],
+        "summary": "Broadcast a message to subscribers",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "subject": "Monthly Update",
+                "message": "Thank you for supporting our projects."
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Broadcast sent successfully"
+          },
+          "400": {
+            "description": "Subject or message is required"
+          },
+          "401": {
+            "description": "Admin authentication required"
+          },
+          "404": {
+            "description": "Subscriber service was not found"
+          }
+        }
+      }
+    },
+    "/api/settings": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Get public platform settings",
+        "responses": {
+          "200": {
+            "description": "Settings fetched successfully"
+          },
+          "404": {
+            "description": "Platform settings were not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Update platform settings",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "siteNameEn": "Qaza Foundation",
+                "contactEmail": "contact@example.com",
+                "totalBeneficiaries": 5000,
+                "yearsOfGiving": 12
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Settings updated successfully"
+          },
+          "400": {
+            "description": "Invalid settings data or empty update body"
+          },
+          "401": {
+            "description": "Admin authentication required"
+          },
+          "404": {
+            "description": "Platform settings were not found"
+          }
+        }
+      }
+    },
+    "/api/ratings": {
+      "post": {
+        "tags": [
+          "Ratings"
+        ],
+        "summary": "Submit or update the authenticated user platform rating",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "value": 5,
+                "comment": "Excellent donation experience"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rating submitted successfully"
+          },
+          "400": {
+            "description": "Rating must be an integer from 1 to 5 or comment is too long"
+          },
+          "401": {
+            "description": "Authentication is required"
+          },
+          "404": {
+            "description": "User was not found"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Ratings"
+        ],
+        "summary": "List platform ratings",
+        "responses": {
+          "200": {
+            "description": "Platform ratings fetched successfully"
+          },
+          "404": {
+            "description": "Ratings were not found"
+          }
+        }
+      }
+    },
+    "/api/ratings/stats": {
+      "get": {
+        "tags": [
+          "Ratings"
+        ],
+        "summary": "Get platform rating statistics",
+        "responses": {
+          "200": {
+            "description": "Platform rating statistics fetched successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "average": 4.7,
+                    "total": 340
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Rating statistics were not found"
+          }
+        }
+      }
+    },
+    "/api/projects/stats": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Get project statistics",
+        "responses": {
+          "200": {
+            "description": "Project statistics fetched successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "total": 12,
+                    "completed": 4
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project statistics were not found"
+          }
+        }
+      }
+    },
+    "/api/projects": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "List active projects",
+        "responses": {
+          "200": {
+            "description": "Projects fetched successfully"
+          },
+          "404": {
+            "description": "Projects were not found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Create a project",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "titleAr",
+                  "titleEn",
+                  "descriptionAr",
+                  "descriptionEn",
+                  "targetAmount",
+                  "status",
+                  "categoryId"
+                ],
+                "example": {
+                  "titleAr": "مشروع غذائي",
+                  "titleEn": "Food Project",
+                  "descriptionAr": "وصف المشروع باللغة العربية",
+                  "descriptionEn": "Project description in English",
+                  "imageUrl": "https://cdn.example.com/project.jpg",
+                  "targetAmount": 10000,
+                  "status": "ACTIVE",
+                  "categoryId": "65f000000000000000000002"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Project created successfully"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Admin authentication required"
+          },
+          "404": {
+            "description": "Category was not found"
+          }
+        }
+      }
+    },
+    "/api/projects/{id}": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Get a project by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "65f000000000000000000003"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project fetched successfully"
+          },
+          "400": {
+            "description": "Invalid project ID"
+          },
+          "404": {
+            "description": "Project was not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Update a project",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "65f000000000000000000003"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "titleEn": "Updated Food Project",
+                "targetAmount": 15000,
+                "status": "COMPLETED"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Project updated successfully"
+          },
+          "400": {
+            "description": "Invalid project data"
+          },
+          "401": {
+            "description": "Admin authentication required"
+          },
+          "404": {
+            "description": "Project was not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Soft-delete a project",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "65f000000000000000000003"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project deleted successfully"
+          },
+          "400": {
+            "description": "Invalid project ID"
+          },
+          "401": {
+            "description": "Admin authentication required"
+          },
+          "404": {
+            "description": "Project was not found"
+          }
+        }
+      }
+    },
+    "/api/payments/checkout": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Create a payment checkout session",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "amount": 250,
+                "currency": "USD",
+                "purpose": "WALLET_FUNDING",
+                "referenceId": "wallet-topup-123"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Checkout session created successfully"
+          },
+          "400": {
+            "description": "Invalid checkout data"
+          },
+          "401": {
+            "description": "Authentication is required"
+          },
+          "404": {
+            "description": "Referenced resource was not found"
+          }
+        }
+      }
+    },
+    "/api/payments/webhook": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Process a payment gateway webhook",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "paymentIntentId": "65f000000000000000000005",
+                "gatewayStatus": "SUCCESS"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Gateway webhook processed idempotently"
+          },
+          "400": {
+            "description": "Invalid payment intent or gateway status"
+          },
+          "404": {
+            "description": "Payment intent was not found"
+          }
+        }
+      }
+    },
+    "/api/news": {
+      "get": {
+        "tags": [
+          "News"
+        ],
+        "summary": "List news articles",
+        "responses": {
+          "200": {
+            "description": "News fetched successfully"
+          },
+          "404": {
+            "description": "News articles were not found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "News"
+        ],
+        "summary": "Create a news article",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "titleAr": "خبر جديد",
+                "titleEn": "New Announcement",
+                "descriptionAr": "تفاصيل الخبر باللغة العربية",
+                "descriptionEn": "Announcement details in English",
+                "imageUrl": "https://cdn.example.com/news.jpg",
+                "detailsUrl": "https://example.com/news/1",
+                "isUrgent": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "News created successfully"
+          },
+          "400": {
+            "description": "Invalid news data"
+          },
+          "401": {
+            "description": "Admin authentication required"
+          }
+        }
+      }
+    },
+    "/api/news/{id}": {
+      "get": {
+        "tags": [
+          "News"
+        ],
+        "summary": "Get a news article",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "65f000000000000000000006"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "News article fetched successfully"
+          },
+          "404": {
+            "description": "News article was not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "News"
+        ],
+        "summary": "Update a news article",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "65f000000000000000000006"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "titleEn": "Updated Announcement",
+                "isUrgent": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "News updated successfully"
+          },
+          "400": {
+            "description": "Invalid news data"
+          },
+          "401": {
+            "description": "Admin authentication required"
+          },
+          "404": {
+            "description": "News article was not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "News"
+        ],
+        "summary": "Delete a news article",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "65f000000000000000000006"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "News deleted successfully"
+          },
+          "401": {
+            "description": "Admin authentication required"
+          },
+          "404": {
+            "description": "News article was not found"
+          }
+        }
+      }
+    },
+    "/api/live-streams": {
+      "get": {
+        "tags": [
+          "Live-Streams"
+        ],
+        "summary": "List live streams",
+        "responses": {
+          "200": {
+            "description": "Live streams fetched successfully"
+          },
+          "404": {
+            "description": "Live streams were not found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Live-Streams"
+        ],
+        "summary": "Create a live stream",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "titleAr": "بث مباشر",
+                "titleEn": "Live Stream",
+                "youtubeUrl": "https://www.youtube.com/watch?v=example",
+                "isActive": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Live stream created successfully"
+          },
+          "400": {
+            "description": "Invalid live stream data"
+          },
+          "401": {
+            "description": "Admin authentication required"
+          }
+        }
+      }
+    },
+    "/api/live-streams/{id}": {
+      "get": {
+        "tags": [
+          "Live-Streams"
+        ],
+        "summary": "Get a live stream by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "65f000000000000000000008"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Live stream fetched successfully"
+          },
+          "404": {
+            "description": "Live stream was not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Live-Streams"
+        ],
+        "summary": "Update a live stream",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "65f000000000000000000008"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "titleEn": "Updated Live Stream",
+                "isActive": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Live stream updated successfully"
+          },
+          "400": {
+            "description": "Invalid live stream data"
+          },
+          "401": {
+            "description": "Admin authentication required"
+          },
+          "404": {
+            "description": "Live stream was not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Live-Streams"
+        ],
+        "summary": "Delete a live stream",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "65f000000000000000000008"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Live stream deleted successfully"
+          },
+          "401": {
+            "description": "Admin authentication required"
+          },
+          "404": {
+            "description": "Live stream was not found"
+          }
+        }
+      }
+    },
+    "/api/faq": {
+      "get": {
+        "tags": [
+          "FAQ"
+        ],
+        "summary": "List frequently asked questions",
+        "responses": {
+          "200": {
+            "description": "FAQs fetched successfully"
+          },
+          "404": {
+            "description": "FAQs were not found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "FAQ"
+        ],
+        "summary": "Create an FAQ",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "questionAr": "ما هي المنصة؟",
+                "questionEn": "What is the platform?",
+                "answerAr": "منصة للتبرع",
+                "answerEn": "A donation platform",
+                "isActive": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "FAQ created successfully"
+          },
+          "400": {
+            "description": "Invalid FAQ data"
+          },
+          "401": {
+            "description": "Admin authentication required"
+          }
+        }
+      }
+    },
+    "/api/faq/{id}": {
+      "get": {
+        "tags": [
+          "FAQ"
+        ],
+        "summary": "Get an FAQ by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "65f000000000000000000007"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "FAQ fetched successfully"
+          },
+          "404": {
+            "description": "FAQ was not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "FAQ"
+        ],
+        "summary": "Update an FAQ",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "65f000000000000000000007"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "answerEn": "Updated answer",
+                "isActive": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "FAQ updated successfully"
+          },
+          "400": {
+            "description": "Invalid FAQ data"
+          },
+          "401": {
+            "description": "Admin authentication required"
+          },
+          "404": {
+            "description": "FAQ was not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "FAQ"
+        ],
+        "summary": "Delete an FAQ",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "65f000000000000000000007"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "FAQ deleted successfully"
+          },
+          "401": {
+            "description": "Admin authentication required"
+          },
+          "404": {
+            "description": "FAQ was not found"
+          }
+        }
+      }
+    },
+    "/api/donations/initialize": {
+      "post": {
+        "tags": [
+          "Donations"
+        ],
+        "summary": "Initialize a donation",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "amount": 100,
+                "currency": "USD",
+                "projectId": "65f000000000000000000003",
+                "userId": "65f000000000000000000001"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Donation initialized successfully"
+          },
+          "400": {
+            "description": "Invalid amount",
+            "project ID": null,
+            "or user ID": null
+          },
+          "404": {
+            "description": "Project or user was not found"
+          }
+        }
+      }
+    },
+    "/api/donations/webhook": {
+      "post": {
+        "tags": [
+          "Donations"
+        ],
+        "summary": "Process a donation payment webhook idempotently",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "donationId": "65f000000000000000000004",
+                "transactionId": "gateway-tx-123"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Payment webhook processed successfully"
+          },
+          "400": {
+            "description": "Invalid donation or transaction data"
+          },
+          "404": {
+            "description": "Donation was not found"
+          }
+        }
+      }
+    },
+    "/api/donations": {
+      "get": {
+        "tags": [
+          "Donations"
+        ],
+        "summary": "List donations for administrators",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 10
+            },
+            "example": 10
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Donations fetched successfully"
+          },
+          "401": {
+            "description": "Admin authentication required"
+          },
+          "404": {
+            "description": "Donations were not found"
+          }
+        }
+      }
+    },
+    "/api/donations/project/{projectId}": {
+      "get": {
+        "tags": [
+          "Donations"
+        ],
+        "summary": "List donations for a project",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            },
+            "example": "65f000000000000000000003"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project donations fetched successfully"
+          },
+          "400": {
+            "description": "Invalid project ID"
+          },
+          "404": {
+            "description": "Project was not found"
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Register a new donor account",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Ahmed Ali"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "donor@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "StrongPass123"
+                  },
+                  "image": {
+                    "type": "string",
+                    "format": "uri",
+                    "example": "https://cdn.example.com/avatar.jpg"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Registration started successfully"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "409": {
+            "description": "Email already exists"
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Log in a donor account",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "donor@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "StrongPass123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Invalid credentials"
+          },
+          "429": {
+            "description": "Too many login attempts"
+          }
+        }
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Refresh the access token using the refresh token cookie",
+        "responses": {
+          "200": {
+            "description": "Access token refreshed successfully"
+          },
+          "401": {
+            "description": "Refresh token cookie is missing or invalid"
+          }
+        }
+      }
+    },
+    "/api/auth/verify-email": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Verify a donor email address with a six-digit OTP",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "otp"
+                ],
+                "properties": {
+                  "otp": {
+                    "type": "string",
+                    "example": "123456"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Email verified successfully"
+          },
+          "400": {
+            "description": "Validation failed"
+          }
+        }
+      }
+    },
+    "/api/auth/forgot-password": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Request a password reset OTP",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "donor@example.com"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password reset flow started"
+          },
+          "400": {
+            "description": "Validation failed"
+          }
+        }
+      }
+    },
+    "/api/auth/reset-password": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Reset a donor password using an OTP",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "otp",
+                  "newPassword"
+                ],
+                "properties": {
+                  "otp": {
+                    "type": "string",
+                    "example": "123456"
+                  },
+                  "newPassword": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "NewStrongPass123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password reset successfully"
+          },
+          "400": {
+            "description": "Validation failed"
+          }
+        }
+      }
+    },
+    "/api/auth/change-password": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Change the authenticated donor password",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "oldPassword",
+                  "newPassword"
+                ],
+                "properties": {
+                  "oldPassword": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "OldStrongPass123"
+                  },
+                  "newPassword": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "NewStrongPass123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password changed successfully"
+          },
+          "400": {
+            "description": "Validation failed"
+          },
+          "401": {
+            "description": "Authentication is required"
+          }
+        }
+      }
+    },
+    "/api/admin/login": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Log in an administrator",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "admin@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "AdminPass123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Admin logged in successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "message": "Admin logged in successfully",
+                  "data": {
+                    "accessToken": "eyJhbGciOi...",
+                    "admin": {
+                      "id": "65f000000000000000000001",
+                      "email": "admin@example.com",
+                      "role": "ADMIN"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": false,
+                  "message": "Invalid email address"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        }
+      }
+    },
+    "/api/admin/profile": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Get the authenticated administrator profile",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Admin profile fetched successfully"
+          },
+          "401": {
+            "description": "Invalid or missing authentication token"
+          },
+          "404": {
+            "description": "Admin was not found"
+          }
+        }
+      }
+    },
+    "/api/admin": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Create an administrator",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "name": "Operations Admin",
+                "email": "ops@example.com",
+                "password": "StrongPass123",
+                "role": "ADMIN"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Admin created successfully"
+          },
+          "400": {
+            "description": "Invalid or incomplete administrator data"
+          },
+          "401": {
+            "description": "Admin authentication required"
+          },
+          "404": {
+            "description": "Related administrator was not found"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "List all administrators",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Admins fetched successfully"
+          },
+          "401": {
+            "description": "Admin authentication required"
+          }
+        }
+      }
+    },
+    "/api/admin/{id}": {
+      "put": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Update an administrator",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            },
+            "example": "65f000000000000000000001"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "name": "Updated Admin",
+                "role": "ADMIN"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Admin updated successfully"
+          },
+          "400": {
+            "description": "Invalid ID or update data"
+          },
+          "401": {
+            "description": "Admin authentication required"
+          },
+          "404": {
+            "description": "Admin was not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Soft-delete an administrator",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "65f000000000000000000001"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Admin deleted successfully"
+          },
+          "400": {
+            "description": "Invalid administrator ID"
+          },
+          "401": {
+            "description": "Admin authentication required"
+          },
+          "404": {
+            "description": "Admin was not found"
+          }
+        }
+      }
+    }
+  }
+}

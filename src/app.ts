@@ -54,6 +54,11 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// إتاحة ملف الـ Swagger كـ JSON مباشر
+app.get('/api-docs-json', (_req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
 
 app.use(`${env.API_PREFIX}/admin`, adminRoutes);
 app.use(`${env.API_PREFIX}/auth`, authRoutes);
