@@ -1,30 +1,38 @@
 import rateLimit from 'express-rate-limit';
-import type { Request, Response } from 'express';
+import { env } from '../../config/env';
 
-export const loginLimiter = rateLimit({
+export const globalRateLimiter = rateLimit({
+  windowMs: env.RATE_LIMIT_WINDOW_MS,
+  max: env.RATE_LIMIT_MAX_REQUESTS,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many requests, please try again later.',
+  },
+});
+
+export const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: true,
-  handler: (_req: Request, res: Response) => {
-    res.status(429).json({
-      success: false,
-      message: 'Too many login attempts, please try again later',
-    });
+  message: {
+    success: false,
+    message: 'Too many login attempts, please try again after 15 minutes.',
   },
 });
 
-export const otpLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 3,
+export const sensitiveOpsLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: true,
-  handler: (_req: Request, res: Response) => {
-    res.status(429).json({
-      success: false,
-      message: 'Too many OTP requests, please try again later',
-    });
+  message: {
+    success: false,
+    message: 'Action limit reached. Please slow down.',
   },
 });
+
+export const loginLimiter = authRateLimiter;
+export const otpLimiter = authRateLimiter;
