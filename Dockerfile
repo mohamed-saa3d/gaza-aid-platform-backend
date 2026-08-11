@@ -1,26 +1,49 @@
-FROM node:24-alpine AS deps
+# ==========================================
+# STAGE 1: Build & Dependencies
+# ==========================================
+FROM node:20-alpine AS builder
+
 WORKDIR /app
+
+# Prisma Client requires OpenSSL on Alpine.
+RUN apk add --no-cache openssl
+
 COPY package*.json ./
+COPY prisma ./prisma/
+
+# Install all dependencies needed for TypeScript compilation.
 RUN npm ci
 
-FROM node:24-alpine AS build
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY package*.json ./
-COPY prisma ./prisma
-COPY tsconfig.json ./
-COPY src ./src
-RUN npx prisma generate
-RUN npx tsc --noEmit
+COPY . .
 
-FROM node:24-alpine AS runner
+# Generate Prisma Client and compile TypeScript.
+RUN npx prisma generate
+RUN npm run build
+
+# Remove development dependencies for the production image.
+RUN npm prune --production
+
+# ==========================================
+# STAGE 2: Production Runner
+# ==========================================
+FROM node:20-alpine AS runner
+
 WORKDIR /app
+
+RUN apk add --no-cache openssl
+
 ENV NODE_ENV=production
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
-COPY package*.json ./
-COPY prisma ./prisma
-COPY src ./src
-COPY tsconfig.json ./
-EXPOSE 3000
-CMD ["npx", "ts-node", "src/server.ts"]
+ENV PORT=5000
+
+# Copy only runtime assets.
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
+
+# Run as the non-root node user for safer production execution.
+USER node
+
+EXPOSE 5000
+
+CMD ["node", "dist/server.js"]

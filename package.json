@@ -4,6 +4,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "scripts": {
+    "build": "tsc",
     "dev": "concurrently \"tsx watch src/server.ts\"",
     "db:reset": "tsx scripts/reset-db.ts",
     "db:studio": "npx prisma studio",

@@ -1,37 +1,24 @@
-services:
-  mongodb:
-    image: mongo:7
-    container_name: qaza-mongodb
-    command: ['mongod', '--replSet', 'rs0', '--bind_ip_all']
-    ports:
-      - '27017:27017'
-    volumes:
-      - mongodb_data:/data/db
-    healthcheck:
-      test:
-        [
-          'CMD',
-          'mongosh',
-          '--quiet',
-          '--eval',
-          'try { rs.status().ok } catch (e) { rs.initiate({_id:"rs0",members:[{_id:0,host:"mongodb:27017"}]}).ok }',
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+version: '3.8'
 
-  backend:
-    build: .
-    container_name: qaza-backend
-    depends_on:
-      mongodb:
-        condition: service_healthy
+services:
+  qaza-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: qaza_backend_prod
+    restart: always
+    ports:
+      - '5000:5000'
     env_file:
       - .env
-    environment:
-      DATABASE_URL: mongodb://mongodb:27017/qaza?replicaSet=rs0
-    ports:
-      - '3000:3000'
-
-volumes:
-  mongodb_data:
+    healthcheck:
+      test: ['CMD-SHELL', 'wget --no-verbose --tries=1 --spider http://localhost:5000/api/settings || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
