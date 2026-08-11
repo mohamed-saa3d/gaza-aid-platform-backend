@@ -10,7 +10,7 @@ import { paymentsRoutes } from './modules/payments/payments.routes';
 import { newsRoutes } from './modules/news/news.routes';
 import { faqRoutes } from './modules/faq/faq.routes';
 import { liveStreamsRoutes } from './modules/live-streams/live-streams.routes';
-import { subscribersRoutes } from './modules/subscribers/subscribers.routes';
+import { subscriberRoutes } from './modules/subscribers/subscribers.routes';
 import { ratingsRoutes } from './modules/ratings/ratings.routes';
 import { settingsRoutes } from './modules/settings/settings.routes';
 import { requestLoggerMiddleware } from './shared/middlewares/request-logger.middleware';
@@ -36,7 +36,7 @@ app.use('/api/wallets', walletRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/faq', faqRoutes);
 app.use('/api/live-streams', liveStreamsRoutes);
-app.use('/api/subscribers', subscribersRoutes);
+app.use('/api/subscribers', subscriberRoutes);
 app.use('/api/ratings', ratingsRoutes);
 app.use('/api/settings', settingsRoutes);
 
