@@ -14,7 +14,8 @@ model Project {
   titleEn         String
   descriptionAr   String
   descriptionEn   String
-  imageUrl        String?
+  imgUrl          String   @default("https://via.placeholder.com/600x400?text=No+Image")
+  imgPublicId     String?
   targetAmount    Float
   collectedAmount Float         @default(0)
   status          ProjectStatus @default(ACTIVE)

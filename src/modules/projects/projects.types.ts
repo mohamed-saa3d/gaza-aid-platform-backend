@@ -6,6 +6,8 @@ export type CreateProjectInput = {
   descriptionAr: string;
   descriptionEn: string;
   imageUrl?: string;
+  imgPublicId?: string;
+  imgUrl?: string;
   targetAmount: number;
   status: ProjectStatus;
   categoryId: string;
@@ -18,6 +20,8 @@ export type UpdateProjectInput = {
   descriptionAr?: string;
   descriptionEn?: string;
   imageUrl?: string | null;
+  imgPublicId?: string | null;
+  imgUrl?: string | null;
   targetAmount?: number;
   status?: ProjectStatus;
   categoryId?: string;

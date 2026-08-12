@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { requireAdmin } from '../../shared/authorization';
 import { validateRequest } from '../../shared/middlewares/validate.middleware';
+import { uploadSingleImage } from '../../shared/middlewares/upload.middleware';
 import {
   createProject,
   deleteProject,
@@ -19,6 +20,6 @@ export const projectsRoutes = Router();
 projectsRoutes.get('/stats', getProjectStats);
 projectsRoutes.get('/', getProjects);
 projectsRoutes.get('/:id', getProject);
-projectsRoutes.post('/', requireAdmin, validateRequest(createProjectSchema), createProject);
-projectsRoutes.put('/:id', requireAdmin, validateRequest(updateProjectSchema), updateProject);
+projectsRoutes.post('/', requireAdmin, uploadSingleImage('image'), validateRequest(createProjectSchema), createProject);
+projectsRoutes.put('/:id', requireAdmin, uploadSingleImage('image'), validateRequest(updateProjectSchema), updateProject);
 projectsRoutes.delete('/:id', requireAdmin, deleteProject);

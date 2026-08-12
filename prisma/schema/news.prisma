@@ -4,7 +4,8 @@ model News {
   titleEn       String
   descriptionAr String
   descriptionEn String
-  imageUrl      String
+  imageUrl      String   @default("https://via.placeholder.com/600x400?text=No+Image")
+  imgPublicId   String?
   detailsUrl    String?
   isUrgent      Boolean  @default(false)
   createdAt     DateTime @default(now())

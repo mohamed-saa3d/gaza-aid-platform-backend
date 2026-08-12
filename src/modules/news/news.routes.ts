@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { requireAdmin } from '../../shared/authorization';
 import { validateRequest } from '../../shared/middlewares/validate.middleware';
+import { uploadSingleImage } from '../../shared/middlewares/upload.middleware';
 import {
   createNews,
   deleteNews,
@@ -17,6 +18,6 @@ export const newsRoutes = Router();
 
 newsRoutes.get('/', getNewsList);
 newsRoutes.get('/:id', getNews);
-newsRoutes.post('/', requireAdmin, validateRequest(createNewsSchema), createNews);
-newsRoutes.put('/:id', requireAdmin, validateRequest(updateNewsSchema), updateNews);
+newsRoutes.post('/', requireAdmin, uploadSingleImage('image'), validateRequest(createNewsSchema), createNews);
+newsRoutes.put('/:id', requireAdmin, uploadSingleImage('image'), validateRequest(updateNewsSchema), updateNews);
 newsRoutes.delete('/:id', requireAdmin, deleteNews);

@@ -2,6 +2,7 @@ import type { ParsedQs } from 'qs';
 import type { RequestHandler } from 'express';
 import { ProjectStatus } from '@prisma/client';
 import { projectsService } from './projects.service';
+import { cloudinaryService } from '../../shared/services/cloudinary.service';
 import { AppError } from '../../shared/errors/app-error';
 import { isMongoObjectId } from '../../shared/utils/object-id';
 
@@ -83,7 +84,15 @@ export const getProject: RequestHandler = async (req, res, next) => {
 
 export const createProject: RequestHandler = async (req, res, next) => {
   try {
-    const { collectedAmount, raisedAmount, ...projectPayload } = req.body;
+    const { collectedAmount, raisedAmount, ...projectPayload } = req.body as any;
+
+    // handle file upload if present
+    if (req.file && req.file.buffer) {
+      const uploadResult = await cloudinaryService.uploadImageStream(req.file.buffer, 'qaza/projects');
+      projectPayload.imgUrl = uploadResult.secure_url;
+      projectPayload.imgPublicId = uploadResult.public_id;
+    }
+
     const project = await projectsService.createProject(projectPayload);
 
     res.status(201).json({
@@ -104,7 +113,26 @@ export const updateProject: RequestHandler = async (req, res, next) => {
       throw new AppError('Invalid project ID', 400);
     }
 
-    const { collectedAmount, raisedAmount, ...projectPayload } = req.body;
+    const { collectedAmount, raisedAmount, ...projectPayload } = req.body as any;
+
+    if (req.file && req.file.buffer) {
+      // fetch existing project's public id to delete previous image
+      const existingPublicId = await projectsService.getProjectPublicId(id);
+      if (existingPublicId) {
+        try {
+          await cloudinaryService.deleteImage(existingPublicId);
+        } catch (err) {
+          // log and continue
+          // eslint-disable-next-line no-console
+          console.warn('Failed to delete previous Cloudinary image', err);
+        }
+      }
+
+      const uploadResult = await cloudinaryService.uploadImageStream(req.file.buffer, 'qaza/projects');
+      projectPayload.imgUrl = uploadResult.secure_url;
+      projectPayload.imgPublicId = uploadResult.public_id;
+    }
+
     const project = await projectsService.updateProject({ id, ...projectPayload });
 
     res.status(200).json({

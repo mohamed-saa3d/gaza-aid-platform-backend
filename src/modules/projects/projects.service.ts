@@ -2,6 +2,7 @@ import { ProjectStatus } from '@prisma/client';
 import { prisma } from '../../shared/database/prisma';
 import { AppError } from '../../shared/errors/app-error';
 import { projectSelect } from './projects.constants';
+import { cloudinaryService } from '../../shared/services/cloudinary.service';
 import type { CreateProjectInput, UpdateProjectInput } from './projects.types';
 
 const calculateProgressPercentage = (collectedAmount: number, targetAmount: number): number => {
@@ -61,6 +62,11 @@ export const projectsService = {
     };
   },
 
+  async getProjectPublicId(id: string) {
+    const proj = await prisma.project.findUnique({ where: { id }, select: { imgPublicId: true } as any });
+    return (proj as any)?.imgPublicId ?? null;
+  },
+
   async getProjectStats() {
     const [total, completed] = await prisma.$transaction([
       prisma.project.count({ where: { deletedAt: null } }),
@@ -94,7 +100,8 @@ export const projectsService = {
         titleEn: sanitizedInput.titleEn.trim(),
         descriptionAr: sanitizedInput.descriptionAr.trim(),
         descriptionEn: sanitizedInput.descriptionEn.trim(),
-        imageUrl: sanitizedInput.imageUrl,
+        imgUrl: sanitizedInput.imgUrl,
+        imgPublicId: sanitizedInput.imgPublicId,
         targetAmount: sanitizedInput.targetAmount,
         status: sanitizedInput.status,
         category: { connect: { id: sanitizedInput.categoryId } },
@@ -148,7 +155,8 @@ export const projectsService = {
           ...(sanitizedInput.titleEn ? { titleEn: sanitizedInput.titleEn.trim() } : {}),
           ...(sanitizedInput.descriptionAr ? { descriptionAr: sanitizedInput.descriptionAr.trim() } : {}),
           ...(sanitizedInput.descriptionEn ? { descriptionEn: sanitizedInput.descriptionEn.trim() } : {}),
-          ...(sanitizedInput.imageUrl !== undefined ? { imageUrl: sanitizedInput.imageUrl } : {}),
+          ...(sanitizedInput.imgUrl !== undefined ? { imgUrl: sanitizedInput.imgUrl } : {}),
+          ...(sanitizedInput.imgPublicId !== undefined ? { imgPublicId: sanitizedInput.imgPublicId } : {}),
           ...(sanitizedInput.targetAmount !== undefined ? { targetAmount: sanitizedInput.targetAmount } : {}),
           ...(sanitizedInput.categoryId ? { category: { connect: { id: sanitizedInput.categoryId } } } : {}),
           status: updatedStatus,
@@ -174,6 +182,7 @@ export const projectsService = {
       select: {
         id: true,
         collectedAmount: true,
+        imgPublicId: true,
       },
     });
 
@@ -189,6 +198,17 @@ export const projectsService = {
       where: { id },
       data: { deletedAt: new Date() },
     });
+
+    // remove image from Cloudinary if present
+    if (project.imgPublicId) {
+      try {
+        await cloudinaryService.deleteImage(project.imgPublicId);
+      } catch (err) {
+        // log and continue; do not fail deletion because of remote cleanup
+        // eslint-disable-next-line no-console
+        console.warn('Failed to delete Cloudinary image for project', project.id, err);
+      }
+    }
 
     return { id };
   },

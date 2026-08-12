@@ -2,6 +2,7 @@ import type { ParsedQs } from 'qs';
 import type { RequestHandler } from 'express';
 import { AppError } from '../../shared/errors/app-error';
 import { newsService } from './news.service';
+import { cloudinaryService } from '../../shared/services/cloudinary.service';
 import { isMongoObjectId } from '../../shared/utils/object-id';
 import { parseLimit, parsePage } from '../../shared/utils/pagination';
 
@@ -43,7 +44,15 @@ export const getNews: RequestHandler = async (req, res, next) => {
 
 export const createNews: RequestHandler = async (req, res, next) => {
   try {
-    const news = await newsService.createNews(req.body);
+    const payload: any = { ...req.body };
+
+    if (req.file && (req.file as any).buffer) {
+      const uploadResult = await cloudinaryService.uploadImageStream((req.file as any).buffer, 'qaza/news');
+      payload.imageUrl = uploadResult.secure_url;
+      payload.imgPublicId = uploadResult.public_id;
+    }
+
+    const news = await newsService.createNews(payload);
 
     res.status(201).json({
       success: true,
@@ -63,7 +72,27 @@ export const updateNews: RequestHandler = async (req, res, next) => {
       throw new AppError('Invalid news ID', 400);
     }
 
-    const news = await newsService.updateNews({ id, ...req.body });
+    const payload: any = { ...req.body };
+
+    if (req.file && (req.file as any).buffer) {
+      // get existing to delete old image
+      const existing = await newsService.getNewsById(id);
+      if (existing && (existing as any).imgPublicId) {
+        try {
+          await cloudinaryService.deleteImage((existing as any).imgPublicId);
+        } catch (err) {
+          // log and continue
+          // eslint-disable-next-line no-console
+          console.warn('Failed to delete previous Cloudinary image for news', err);
+        }
+      }
+
+      const uploadResult = await cloudinaryService.uploadImageStream((req.file as any).buffer, 'qaza/news');
+      payload.imageUrl = uploadResult.secure_url;
+      payload.imgPublicId = uploadResult.public_id;
+    }
+
+    const news = await newsService.updateNews({ id, ...payload });
 
     res.status(200).json({
       success: true,

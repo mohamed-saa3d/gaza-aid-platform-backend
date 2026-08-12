@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../../shared/database/prisma';
 import { AppError } from '../../shared/errors/app-error';
 import { newsSelect } from './news.constants';
+import { cloudinaryService } from '../../shared/services/cloudinary.service';
 import type { CreateNewsInput, UpdateNewsInput } from './news.types';
 
 export const newsService = {
@@ -39,10 +40,11 @@ export const newsService = {
         titleEn: input.titleEn.trim(),
         descriptionAr: input.descriptionAr.trim(),
         descriptionEn: input.descriptionEn.trim(),
-        imageUrl: input.imageUrl.trim(),
+        imageUrl: input.imageUrl?.trim() || 'https://via.placeholder.com/600x400?text=No+Image',
+        imgPublicId: (input as any).imgPublicId || null,
         detailsUrl: input.detailsUrl?.trim() || null,
         isUrgent: input.isUrgent ?? false,
-      },
+      } as any,
       select: newsSelect,
     });
   },
@@ -56,12 +58,13 @@ export const newsService = {
           ...(input.titleEn !== undefined ? { titleEn: input.titleEn.trim() } : {}),
           ...(input.descriptionAr !== undefined ? { descriptionAr: input.descriptionAr.trim() } : {}),
           ...(input.descriptionEn !== undefined ? { descriptionEn: input.descriptionEn.trim() } : {}),
-          ...(input.imageUrl !== undefined ? { imageUrl: input.imageUrl.trim() } : {}),
+          ...(input.imageUrl !== undefined ? { imageUrl: (input.imageUrl as string).trim() } : {}),
+          ...(input.imgPublicId !== undefined ? { imgPublicId: (input as any).imgPublicId } : {}),
           ...(input.detailsUrl !== undefined
             ? { detailsUrl: input.detailsUrl?.trim() || null }
             : {}),
           ...(input.isUrgent !== undefined ? { isUrgent: input.isUrgent } : {}),
-        },
+        } as any,
         select: newsSelect,
       });
     } catch (error) {
@@ -78,7 +81,19 @@ export const newsService = {
 
   async deleteNews(id: string) {
     try {
+      // fetch public id to delete remote image
+      const existing = await prisma.news.findUnique({ where: { id }, select: { imgPublicId: true } as any });
       await prisma.news.delete({ where: { id } });
+
+      if (existing && (existing as any).imgPublicId) {
+        try {
+          await cloudinaryService.deleteImage((existing as any).imgPublicId);
+        } catch (err) {
+          // log and continue
+          // eslint-disable-next-line no-console
+          console.warn('Failed to delete Cloudinary image for news', id, err);
+        }
+      }
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
