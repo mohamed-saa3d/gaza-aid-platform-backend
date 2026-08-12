@@ -1,0 +1,53 @@
+import type { RequestHandler } from 'express';
+import redisClient from '../../config/redis.config';
+
+export const useCache = (prefix: string, ttlSeconds: number): RequestHandler => {
+  return async (req, res, next) => {
+    const key = `${prefix}:${req.originalUrl}`;
+
+    try {
+      if (!redisClient || !redisClient.isOpen) {
+        return next();
+      }
+
+      const cached = await redisClient.get(key);
+
+      if (cached) {
+        const body = JSON.parse(cached);
+        res.status(200).json(body);
+        return;
+      }
+
+      // hijack res.json to save response into cache
+      const originalJson = res.json.bind(res);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      res.json = (body: any) => {
+        try {
+          if (redisClient && redisClient.isOpen) {
+            // fire-and-forget so we don't block the response
+            // @ts-ignore - setEx returns a promise
+            redisClient.setEx(key, ttlSeconds, JSON.stringify(body)).catch((err: unknown) => {
+              // eslint-disable-next-line no-console
+              console.warn('Failed to set cache for', key, err);
+            });
+          }
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.warn('Failed to set cache for', key, err);
+        }
+
+        return originalJson(body);
+      };
+
+      next();
+    } catch (err) {
+      // fail-safe: log and continue to DB
+      // eslint-disable-next-line no-console
+      console.warn('Cache middleware error', err);
+      return next();
+    }
+  };
+};
+
+export default useCache;

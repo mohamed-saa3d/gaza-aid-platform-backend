@@ -3,6 +3,7 @@ import type { RequestHandler } from 'express';
 import { ProjectStatus } from '@prisma/client';
 import { projectsService } from './projects.service';
 import { cloudinaryService } from '../../shared/services/cloudinary.service';
+import { redisService } from '../../shared/services/redis.service';
 import { AppError } from '../../shared/errors/app-error';
 import { isMongoObjectId } from '../../shared/utils/object-id';
 
@@ -95,6 +96,14 @@ export const createProject: RequestHandler = async (req, res, next) => {
 
     const project = await projectsService.createProject(projectPayload);
 
+    // invalidate related caches (fail silently)
+    try {
+      await redisService.clearCachePattern('projects*');
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('Failed to clear projects cache after create', err);
+    }
+
     res.status(201).json({
       success: true,
       message: 'Project created successfully',
@@ -135,6 +144,14 @@ export const updateProject: RequestHandler = async (req, res, next) => {
 
     const project = await projectsService.updateProject({ id, ...projectPayload });
 
+    // invalidate cache
+    try {
+      await redisService.clearCachePattern('projects*');
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('Failed to clear projects cache after update', err);
+    }
+
     res.status(200).json({
       success: true,
       message: 'Project updated successfully',
@@ -169,6 +186,13 @@ export const deleteProject: RequestHandler = async (req, res, next) => {
     }
 
     const result = await projectsService.deleteProject(id);
+
+    try {
+      await redisService.clearCachePattern('projects*');
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('Failed to clear projects cache after delete', err);
+    }
 
     res.status(200).json({
       success: true,

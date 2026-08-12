@@ -1,5 +1,6 @@
 declare module 'multer';
 declare module 'streamifier';
+declare module 'redis';
 
 declare global {
   namespace Express {

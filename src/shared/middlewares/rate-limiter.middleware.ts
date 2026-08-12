@@ -1,5 +1,7 @@
 import rateLimit from 'express-rate-limit';
 import { env } from '../../config/env';
+const RedisStore = require('rate-limit-redis');
+import redisClient from '../../config/redis.config';
 
 export const globalRateLimiter = rateLimit({
   windowMs: env.RATE_LIMIT_WINDOW_MS,
@@ -21,6 +23,7 @@ export const authRateLimiter = rateLimit({
     success: false,
     message: 'Too many login attempts, please try again after 15 minutes.',
   },
+  store: new RedisStore({ sendCommand: (...args: string[]) => redisClient.sendCommand(args) }),
 });
 
 export const sensitiveOpsLimiter = rateLimit({
@@ -43,6 +46,7 @@ export const createAdminLimiter = rateLimit({
     success: false,
     message: 'Too many admin creation attempts from this IP, please try again after 15 minutes.',
   },
+  store: new RedisStore({ sendCommand: (...args: string[]) => redisClient.sendCommand(args) }),
 });
 
 export const loginLimiter = authRateLimiter;

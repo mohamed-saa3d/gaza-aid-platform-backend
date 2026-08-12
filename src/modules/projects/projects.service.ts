@@ -36,7 +36,7 @@ export const projectsService = {
     ]);
 
     return {
-      data: projects.map((project) => ({
+      data: projects.map((project: any) => ({
         ...project,
         progressPercentage: calculateProgressPercentage(project.collectedAmount, project.targetAmount),
       })),
@@ -105,8 +105,8 @@ export const projectsService = {
         targetAmount: sanitizedInput.targetAmount,
         status: sanitizedInput.status,
         category: { connect: { id: sanitizedInput.categoryId } },
-      },
-      select: projectSelect,
+      } as any,
+      select: projectSelect as any,
     });
   },
 
@@ -160,8 +160,8 @@ export const projectsService = {
           ...(sanitizedInput.targetAmount !== undefined ? { targetAmount: sanitizedInput.targetAmount } : {}),
           ...(sanitizedInput.categoryId ? { category: { connect: { id: sanitizedInput.categoryId } } } : {}),
           status: updatedStatus,
-        },
-        select: projectSelect,
+        } as any,
+        select: projectSelect as any,
       });
     } catch (error) {
       if (
