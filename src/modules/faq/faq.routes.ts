@@ -8,6 +8,7 @@ import {
   getFaqs,
   updateFaq,
 } from './faq.controller';
+import { useCache } from '../../shared/middlewares/cache.middleware';
 import {
   createFaqSchema,
   updateFaqSchema,
@@ -15,8 +16,8 @@ import {
 
 export const faqRoutes = Router();
 
-faqRoutes.get('/', getFaqs);
-faqRoutes.get('/:id', getFaq);
+faqRoutes.get('/', useCache('faq', 3600), getFaqs);
+faqRoutes.get('/:id', useCache('faq', 3600), getFaq);
 faqRoutes.post('/', requireAdmin, validateRequest(createFaqSchema), createFaq);
 faqRoutes.put('/:id', requireAdmin, validateRequest(updateFaqSchema), updateFaq);
 faqRoutes.delete('/:id', requireAdmin, deleteFaq);

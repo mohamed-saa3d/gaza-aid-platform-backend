@@ -6,7 +6,7 @@ export const projectSelect = {
   titleEn: true,
   descriptionAr: true,
   descriptionEn: true,
-  imageUrl: true,
+  imgUrl: true,
   targetAmount: true,
   collectedAmount: true,
   status: true,

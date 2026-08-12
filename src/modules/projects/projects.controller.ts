@@ -4,6 +4,7 @@ import { ProjectStatus } from '@prisma/client';
 import { projectsService } from './projects.service';
 import { cloudinaryService } from '../../shared/services/cloudinary.service';
 import { redisService } from '../../shared/services/redis.service';
+import logger from '../../shared/utils/logger';
 import { AppError } from '../../shared/errors/app-error';
 import { isMongoObjectId } from '../../shared/utils/object-id';
 
@@ -100,8 +101,7 @@ export const createProject: RequestHandler = async (req, res, next) => {
     try {
       await redisService.clearCachePattern('projects*');
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.warn('Failed to clear projects cache after create', err);
+      logger.warn('Failed to clear projects cache after create', err);
     }
 
     res.status(201).json({
@@ -131,9 +131,7 @@ export const updateProject: RequestHandler = async (req, res, next) => {
         try {
           await cloudinaryService.deleteImage(existingPublicId);
         } catch (err) {
-          // log and continue
-          // eslint-disable-next-line no-console
-          console.warn('Failed to delete previous Cloudinary image', err);
+          logger.warn('Failed to delete previous Cloudinary image', err);
         }
       }
 
@@ -148,8 +146,7 @@ export const updateProject: RequestHandler = async (req, res, next) => {
     try {
       await redisService.clearCachePattern('projects*');
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.warn('Failed to clear projects cache after update', err);
+      logger.warn('Failed to clear projects cache after update', err);
     }
 
     res.status(200).json({
@@ -190,8 +187,7 @@ export const deleteProject: RequestHandler = async (req, res, next) => {
     try {
       await redisService.clearCachePattern('projects*');
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.warn('Failed to clear projects cache after delete', err);
+      logger.warn('Failed to clear projects cache after delete', err);
     }
 
     res.status(200).json({

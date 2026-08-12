@@ -1,5 +1,6 @@
 import type { RequestHandler } from 'express';
 import redisClient from '../../config/redis.config';
+import logger from '../utils/logger';
 
 export const useCache = (prefix: string, ttlSeconds: number): RequestHandler => {
   return async (req, res, next) => {
@@ -28,13 +29,11 @@ export const useCache = (prefix: string, ttlSeconds: number): RequestHandler => 
             // fire-and-forget so we don't block the response
             // @ts-ignore - setEx returns a promise
             redisClient.setEx(key, ttlSeconds, JSON.stringify(body)).catch((err: unknown) => {
-              // eslint-disable-next-line no-console
-              console.warn('Failed to set cache for', key, err);
+              logger.warn('Failed to set cache for', key, err);
             });
           }
         } catch (err) {
-          // eslint-disable-next-line no-console
-          console.warn('Failed to set cache for', key, err);
+          logger.warn('Failed to set cache for', key, err);
         }
 
         return originalJson(body);
@@ -43,8 +42,7 @@ export const useCache = (prefix: string, ttlSeconds: number): RequestHandler => 
       next();
     } catch (err) {
       // fail-safe: log and continue to DB
-      // eslint-disable-next-line no-console
-      console.warn('Cache middleware error', err);
+      logger.warn('Cache middleware error', err);
       return next();
     }
   };

@@ -5,9 +5,10 @@ import {
   getSettings,
   updateSettings,
 } from './settings.controller';
+import { useCache } from '../../shared/middlewares/cache.middleware';
 import { updateSettingsSchema } from './settings.validation';
 
 export const settingsRoutes = Router();
 
-settingsRoutes.get('/', getSettings);
+settingsRoutes.get('/', useCache('settings', 3600), getSettings);
 settingsRoutes.put('/', requireAdmin, validateRequest(updateSettingsSchema), updateSettings);

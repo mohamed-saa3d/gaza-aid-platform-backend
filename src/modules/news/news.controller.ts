@@ -3,6 +3,8 @@ import type { RequestHandler } from 'express';
 import { AppError } from '../../shared/errors/app-error';
 import { newsService } from './news.service';
 import { cloudinaryService } from '../../shared/services/cloudinary.service';
+import { redisService } from '../../shared/services/redis.service';
+import logger from '../../shared/utils/logger';
 import { isMongoObjectId } from '../../shared/utils/object-id';
 import { parseLimit, parsePage } from '../../shared/utils/pagination';
 
@@ -54,6 +56,12 @@ export const createNews: RequestHandler = async (req, res, next) => {
 
     const news = await newsService.createNews(payload);
 
+    try {
+      await redisService.clearCachePattern('news*');
+    } catch (err) {
+      logger.warn('Failed to clear news cache after create', err);
+    }
+
     res.status(201).json({
       success: true,
       message: 'News item created successfully',
@@ -81,9 +89,7 @@ export const updateNews: RequestHandler = async (req, res, next) => {
         try {
           await cloudinaryService.deleteImage((existing as any).imgPublicId);
         } catch (err) {
-          // log and continue
-          // eslint-disable-next-line no-console
-          console.warn('Failed to delete previous Cloudinary image for news', err);
+          logger.warn('Failed to delete previous Cloudinary image for news', err);
         }
       }
 
@@ -93,6 +99,12 @@ export const updateNews: RequestHandler = async (req, res, next) => {
     }
 
     const news = await newsService.updateNews({ id, ...payload });
+
+    try {
+      await redisService.clearCachePattern('news*');
+    } catch (err) {
+      logger.warn('Failed to clear news cache after update', err);
+    }
 
     res.status(200).json({
       success: true,
@@ -113,6 +125,12 @@ export const deleteNews: RequestHandler = async (req, res, next) => {
     }
 
     await newsService.deleteNews(id);
+
+    try {
+      await redisService.clearCachePattern('news*');
+    } catch (err) {
+      logger.warn('Failed to clear news cache after delete', err);
+    }
 
     res.status(200).json({
       success: true,

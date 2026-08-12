@@ -9,6 +9,7 @@ import {
   getNewsList,
   updateNews,
 } from './news.controller';
+import { useCache } from '../../shared/middlewares/cache.middleware';
 import {
   createNewsSchema,
   updateNewsSchema,
@@ -16,8 +17,8 @@ import {
 
 export const newsRoutes = Router();
 
-newsRoutes.get('/', getNewsList);
-newsRoutes.get('/:id', getNews);
+newsRoutes.get('/', useCache('news', 3600), getNewsList);
+newsRoutes.get('/:id', useCache('news', 3600), getNews);
 newsRoutes.post('/', requireAdmin, uploadSingleImage('image'), validateRequest(createNewsSchema), createNews);
 newsRoutes.put('/:id', requireAdmin, uploadSingleImage('image'), validateRequest(updateNewsSchema), updateNews);
 newsRoutes.delete('/:id', requireAdmin, deleteNews);
