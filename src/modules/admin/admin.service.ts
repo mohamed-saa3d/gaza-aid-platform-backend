@@ -53,13 +53,13 @@ export const adminService = {
     });
 
     if (!currentAdmin) {
-      throw new AppError('Current Root Admin was not found', 404);
+      throw new AppError('Invalid Root Admin credentials confirmation', 401);
     }
 
     const isPasswordValid = await bcrypt.compare(rootPassword, currentAdmin.passwordHash);
 
     if (!isPasswordValid) {
-      throw new AppError('Invalid Root Admin password confirmation.', 401);
+      throw new AppError('Invalid Root Admin credentials confirmation', 401);
     }
   },
 

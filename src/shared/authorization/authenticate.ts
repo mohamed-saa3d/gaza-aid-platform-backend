@@ -38,10 +38,12 @@ export const authenticateUser = (req: Request, res: Response, next: NextFunction
   try {
     req.user = verifyToken(token);
     next();
+    return;
   } catch (error) {
     res.status(401).json({
       success: false,
       message: 'Invalid or expired authentication token',
     });
+    return;
   }
 };

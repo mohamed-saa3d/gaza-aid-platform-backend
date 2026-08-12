@@ -46,20 +46,28 @@ export const getAdminProfile: RequestHandler = async (req, res, next) => {
 
 export const createAdmin: RequestHandler = async (req, res, next) => {
   try {
-    const { name, email, password, role, rootPassword } = req.body as {
+    const { name, email, password, role, rootEmail, rootPassword } = req.body as {
       name?: string;
       email?: string;
       password?: string;
       role?: AdminRole;
+      rootEmail?: string;
       rootPassword?: string;
     };
 
-    if (!name || !email || !password || !rootPassword) {
-      throw new AppError('Name, email, password, and rootPassword are required', 400);
+    if (!name || !email || !password || !rootEmail || !rootPassword) {
+      throw new AppError(
+        'Name, email, password, rootEmail, and rootPassword are required',
+        400,
+      );
     }
 
-    if (!req.user?.id) {
+    if (!req.user?.id || !req.user?.email) {
       throw new AppError('Authentication token is required', 401);
+    }
+
+    if (req.user.email.toLowerCase().trim() !== rootEmail.toLowerCase().trim()) {
+      throw new AppError('Invalid Root Admin credentials confirmation', 401);
     }
 
     await adminService.verifyRootAdminPassword(req.user.id, rootPassword);
@@ -72,8 +80,12 @@ export const createAdmin: RequestHandler = async (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      message: 'Admin created successfully',
-      data: admin,
+      data: {
+        id: admin.id,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role,
+      },
     });
   } catch (error) {
     next(error);
