@@ -46,6 +46,23 @@ export const adminService = {
     }
   },
 
+  async verifyRootAdminPassword(adminId: string, rootPassword: string) {
+    const currentAdmin = await prisma.admin.findUnique({
+      where: { id: adminId },
+      select: { passwordHash: true },
+    });
+
+    if (!currentAdmin) {
+      throw new AppError('Current Root Admin was not found', 404);
+    }
+
+    const isPasswordValid = await bcrypt.compare(rootPassword, currentAdmin.passwordHash);
+
+    if (!isPasswordValid) {
+      throw new AppError('Invalid Root Admin password confirmation.', 401);
+    }
+  },
+
   getAllAdmins() {
     return prisma.admin.findMany({
       select: adminSelect,
@@ -78,11 +95,13 @@ export const adminService = {
       accessToken: signToken({
         id: admin.id,
         role: 'ADMIN',
+        email: admin.email,
         isAdmin: true,
       }),
       refreshToken: signRefreshToken({
         id: admin.id,
         role: 'ADMIN',
+        email: admin.email,
         isAdmin: true,
       }),
       admin: {

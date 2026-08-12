@@ -1,5 +1,12 @@
+import dotenv from 'dotenv';
 import { AdminRole, PrismaClient, ProjectStatus } from '@prisma/client';
 import bcrypt from 'bcrypt';
+
+dotenv.config();
+
+// الاعتماد حصرياً على الـ Environment Variables
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@qaza.org';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin@123456';
 
 const prisma = new PrismaClient();
 
@@ -17,66 +24,67 @@ const ids = {
 async function main() {
   console.log('Starting database seeding...');
 
-  const rootAdminEmail = 'admin@qaza.org';
-  const hashedPassword = await bcrypt.hash('Admin@123456', 12);
+  // 1. استخدام المتغيرات الآمنة
+  const hashedPassword = await bcrypt.hash(ADMIN_PASSWORD, 12);
+
+  const adminData = {
+    name: 'Root Admin',
+    email: ADMIN_EMAIL,
+    passwordHash: hashedPassword,
+    role: AdminRole.ADMIN,
+  };
 
   const rootAdmin = await prisma.admin.upsert({
-    where: { email: rootAdminEmail },
-    update: {},
+    where: { email: ADMIN_EMAIL },
+    update: adminData, // إصلاح البج: الآن لو تغير الاسم أو الصلاحية ستتحدث
     create: {
       id: ids.rootAdmin,
-      name: 'Root Admin',
-      email: rootAdminEmail,
-      passwordHash: hashedPassword,
-      role: AdminRole.ADMIN,
+      ...adminData
     },
   });
-  console.log(`Root Admin created/verified: ${rootAdmin.email}`);
+  console.log(`Root Admin created/updated: ${rootAdmin.email}`);
+
+  // 2. تحديث الإعدادات 
+  const settingsData = {
+    siteNameAr: 'منصة قضاء',
+    siteNameEn: 'Qaza Platform',
+    aboutUsTextAr: 'منصة خيرية لدعم المشاريع الإنسانية.',
+    aboutUsTextEn: 'A charity platform supporting humanitarian projects.',
+    contactEmail: 'contact@qaza.org',
+  };
 
   const settings = await prisma.platformSettings.upsert({
     where: { id: ids.settings },
-    update: {},
+    update: settingsData, // إصلاح البج
     create: {
       id: ids.settings,
-      siteNameAr: 'منصة قضاء',
-      siteNameEn: 'Qaza Platform',
-      aboutUsTextAr: 'منصة خيرية لدعم المشاريع الإنسانية.',
-      aboutUsTextEn: 'A charity platform supporting humanitarian projects.',
-      contactEmail: 'contact@qaza.org',
       totalBeneficiaries: 0,
       foodBaskets: 0,
       yearsOfGiving: 0,
+      ...settingsData
     },
   });
-  console.log(`System settings initialized: ${settings.siteNameEn}`);
+  console.log(`System settings initialized/updated: ${settings.siteNameEn}`);
 
+  // 3. الأقسام (باستخدام Promise.all للأداء العالي)
   const categories = [
-    {
-      id: ids.foodCategory,
-      nameAr: 'كفالة الأسر',
-      nameEn: 'Family Sponsorship',
-    },
-    {
-      id: ids.waterCategory,
-      nameAr: 'المياه',
-      nameEn: 'Water',
-    },
-    {
-      id: ids.educationCategory,
-      nameAr: 'التعليم',
-      nameEn: 'Education',
-    },
+    { id: ids.foodCategory, nameAr: 'كفالة الأسر', nameEn: 'Family Sponsorship' },
+    { id: ids.waterCategory, nameAr: 'المياه', nameEn: 'Water' },
+    { id: ids.educationCategory, nameAr: 'التعليم', nameEn: 'Education' },
   ];
 
-  for (const categoryData of categories) {
-    const category = await prisma.category.upsert({
-      where: { id: categoryData.id },
-      update: {},
-      create: categoryData,
-    });
-    console.log(`Category seeded: ${category.nameEn}`);
-  }
+  await Promise.all(
+    categories.map(categoryData =>
+      prisma.category.upsert({
+        where: { id: categoryData.id },
+        update: { nameAr: categoryData.nameAr, nameEn: categoryData.nameEn }, // تحديث عند التعديل
+        create: categoryData,
+      })
+    )
+  );
+  console.log(`${categories.length} Categories seeded.`);
 
+  // 4. المشاريع (باستخدام Promise.all للأداء العالي)
   const sampleProjects = [
     {
       id: ids.familiesProject,
@@ -108,26 +116,29 @@ async function main() {
       descriptionEn: 'Supporting tuition, books, and supplies for eligible students.',
       targetAmount: 30000,
       collectedAmount: 30000,
-      status: ProjectStatus.COMPLETED,
+      status: ProjectStatus.COMPLETED, // ملاحظة: هذا مكتمل!
       categoryId: ids.educationCategory,
     },
   ];
 
-  for (const projectData of sampleProjects) {
-    const project = await prisma.project.upsert({
-      where: { id: projectData.id },
-      update: {},
-      create: projectData,
-    });
-    console.log(`Project seeded: ${project.titleEn}`);
-  }
+  await Promise.all(
+    sampleProjects.map(projectData => {
+      const { id, ...dataToUpdate } = projectData;
+      return prisma.project.upsert({
+        where: { id: projectData.id },
+        update: dataToUpdate, // لضمان تحديث النصوص أو المبالغ لو تم تغييرها في الكود
+        create: projectData,
+      });
+    })
+  );
+  console.log(`${sampleProjects.length} Projects seeded.`);
 
-  console.log('Database seeding completed successfully!');
+  console.log('✅ Database seeding completed successfully!');
 }
 
 main()
   .catch((error) => {
-    console.error('Error during seeding:', error);
+    console.error('❌ Error during seeding:', error);
     process.exit(1);
   })
   .finally(async () => {

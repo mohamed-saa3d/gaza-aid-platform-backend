@@ -46,16 +46,23 @@ export const getAdminProfile: RequestHandler = async (req, res, next) => {
 
 export const createAdmin: RequestHandler = async (req, res, next) => {
   try {
-    const { name, email, password, role } = req.body as {
+    const { name, email, password, role, rootPassword } = req.body as {
       name?: string;
       email?: string;
       password?: string;
       role?: AdminRole;
+      rootPassword?: string;
     };
 
-    if (!name || !email || !password) {
-      throw new AppError('Name, email, and password are required', 400);
+    if (!name || !email || !password || !rootPassword) {
+      throw new AppError('Name, email, password, and rootPassword are required', 400);
     }
+
+    if (!req.user?.id) {
+      throw new AppError('Authentication token is required', 401);
+    }
+
+    await adminService.verifyRootAdminPassword(req.user.id, rootPassword);
 
     if (role && !Object.values(AdminRole).includes(role)) {
       throw new AppError('Invalid admin role', 400);

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { loginLimiter } from '../../shared/middlewares/rate-limiter.middleware';
-import { requireAdmin } from '../../shared/authorization';
+import { requireAdmin, isRootAdmin } from '../../shared/authorization';
 import { validateRequest } from '../../shared/middlewares/validate.middleware';
 import {
   adminLogin,
@@ -16,7 +16,7 @@ export const adminRoutes = Router();
 
 adminRoutes.post('/login', loginLimiter, validateRequest(adminLoginSchema), adminLogin);
 adminRoutes.get('/profile', requireAdmin, getAdminProfile);
-adminRoutes.post('/', requireAdmin, createAdmin);
+adminRoutes.post('/', requireAdmin, isRootAdmin, createAdmin);
 adminRoutes.get('/', requireAdmin, getAllAdmins);
 adminRoutes.put('/:id', requireAdmin, updateAdmin);
 adminRoutes.delete('/:id', requireAdmin, deleteAdmin);
