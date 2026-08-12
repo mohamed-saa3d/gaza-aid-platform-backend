@@ -34,5 +34,16 @@ export const sensitiveOpsLimiter = rateLimit({
   },
 });
 
+export const createAdminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many admin creation attempts from this IP, please try again after 15 minutes.',
+  },
+});
+
 export const loginLimiter = authRateLimiter;
 export const otpLimiter = authRateLimiter;
