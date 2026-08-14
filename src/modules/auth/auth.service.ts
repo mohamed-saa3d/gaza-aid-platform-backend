@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { Prisma, Role } from '@prisma/client';
 import { prisma } from '../../shared/database/prisma';
 import { AppError } from '../../shared/errors/app-error';
+import { isPrismaKnownRequestError } from '../../shared/utils/prisma-error';
 import { signRefreshToken, signToken, verifyRefreshToken } from '../../shared/utils/jwt';
 import { emailService } from '../../shared/services/email.service';
 import { userSelect } from './auth.constants';
@@ -53,10 +54,7 @@ export const authService = {
         redirectTo: '/verify-otp',
       };
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
+      if (isPrismaKnownRequestError(error, 'P2002')) {
         throw new AppError('A user with this email already exists', 409);
       }
 

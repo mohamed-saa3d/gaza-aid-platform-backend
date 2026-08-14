@@ -2,6 +2,7 @@ import { AdminRole, Prisma } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { prisma } from '../../shared/database/prisma';
 import { AppError } from '../../shared/errors/app-error';
+import { isPrismaKnownRequestError } from '../../shared/utils/prisma-error';
 import { signRefreshToken, signToken } from '../../shared/utils/jwt';
 import { adminSelect } from './admin.constants';
 import type { AdminLoginInput, CreateAdminInput, UpdateAdminInput } from './admin.types';
@@ -35,10 +36,7 @@ export const adminService = {
         select: adminSelect,
       });
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
+      if (isPrismaKnownRequestError(error, 'P2002')) {
         throw new AppError('An admin with this email already exists', 409);
       }
 
@@ -137,10 +135,7 @@ export const adminService = {
         select: adminSelect,
       });
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
+      if (isPrismaKnownRequestError(error, 'P2025')) {
         throw new AppError('Admin was not found', 404);
       }
 

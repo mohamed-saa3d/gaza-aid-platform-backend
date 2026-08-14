@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../shared/database/prisma';
+import { isPrismaKnownRequestError } from '../../shared/utils/prisma-error';
 import type {
   BroadcastMessageInput,
   GetAllSubscribersInput,
@@ -42,10 +43,7 @@ export const subscribersService = {
         select: subscriberSelect,
       });
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
+      if (isPrismaKnownRequestError(error, 'P2002')) {
         return prisma.subscriber.update({
           where: { email },
           data: { isActive: true },

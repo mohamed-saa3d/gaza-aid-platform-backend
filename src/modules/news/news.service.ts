@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../shared/database/prisma';
 import { AppError } from '../../shared/errors/app-error';
+import { isPrismaKnownRequestError } from '../../shared/utils/prisma-error';
 import { newsSelect } from './news.constants';
 import { cloudinaryService } from '../../shared/services/cloudinary.service';
 import type { CreateNewsInput, UpdateNewsInput } from './news.types';
@@ -68,10 +69,7 @@ export const newsService = {
         select: newsSelect,
       });
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
+      if (isPrismaKnownRequestError(error, 'P2025')) {
         throw new AppError('News item was not found', 404);
       }
 
@@ -95,10 +93,7 @@ export const newsService = {
         }
       }
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
+      if (isPrismaKnownRequestError(error, 'P2025')) {
         throw new AppError('News item was not found', 404);
       }
 

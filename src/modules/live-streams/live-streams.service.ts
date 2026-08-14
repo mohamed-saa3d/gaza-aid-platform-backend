@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../shared/database/prisma';
 import { AppError } from '../../shared/errors/app-error';
+import { isPrismaKnownRequestError } from '../../shared/utils/prisma-error';
 import { liveStreamSelect } from './live-streams.constants';
 import type { CreateLiveStreamInput, UpdateLiveStreamInput } from './live-streams.types';
 
@@ -59,10 +60,7 @@ export const liveStreamsService = {
         select: liveStreamSelect,
       });
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
+      if (isPrismaKnownRequestError(error, 'P2025')) {
         throw new AppError('Live stream was not found', 404);
       }
 
@@ -74,10 +72,7 @@ export const liveStreamsService = {
     try {
       await prisma.liveStream.delete({ where: { id } });
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
+      if (isPrismaKnownRequestError(error, 'P2025')) {
         throw new AppError('Live stream was not found', 404);
       }
 

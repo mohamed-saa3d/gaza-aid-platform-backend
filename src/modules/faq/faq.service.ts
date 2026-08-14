@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../shared/database/prisma';
 import { AppError } from '../../shared/errors/app-error';
+import { isPrismaKnownRequestError } from '../../shared/utils/prisma-error';
 import { faqSelect } from './faq.constants';
 import type { CreateFaqInput, UpdateFaqInput } from './faq.types';
 
@@ -61,10 +62,7 @@ export const faqService = {
         select: faqSelect,
       });
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
+      if (isPrismaKnownRequestError(error, 'P2025')) {
         throw new AppError('FAQ was not found', 404);
       }
 
@@ -76,10 +74,7 @@ export const faqService = {
     try {
       await prisma.fAQ.delete({ where: { id } });
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
+      if (isPrismaKnownRequestError(error, 'P2025')) {
         throw new AppError('FAQ was not found', 404);
       }
 
