@@ -15,8 +15,9 @@ export const emailService = {
     };
 
     if (!smtpConfigured || !transport) {
-      console.log('[EmailService] Mock verification email:');
-      console.log(JSON.stringify({ ...message, otp }, null, 2));
+      console.log(
+        `[Mock Email] Sent to ${to} (Subject: ${message.subject}) - Content hidden for security.`,
+      );
       return;
     }
 
@@ -32,8 +33,9 @@ export const emailService = {
     };
 
     if (!smtpConfigured || !transport) {
-      console.log('[EmailService] Mock password reset email:');
-      console.log(JSON.stringify({ ...message, otp }, null, 2));
+      console.log(
+        `[Mock Email] Sent to ${to} (Subject: ${message.subject}) - Content hidden for security.`,
+      );
       return;
     }
 
