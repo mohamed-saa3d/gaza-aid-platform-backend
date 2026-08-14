@@ -71,6 +71,10 @@ export const authService = {
       throw new AppError('Invalid email or password', 401);
     }
 
+    if (!user.isEmailVerified) {
+      throw new AppError('Please verify your email address before logging in', 403);
+    }
+
     const isPasswordValid = await bcrypt.compare(input.password, user.password);
 
     if (!isPasswordValid) {

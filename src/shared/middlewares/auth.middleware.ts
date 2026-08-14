@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
+import { Role } from '@prisma/client';
 import { AppError } from '../errors/app-error';
 import { type AuthTokenPayload, verifyToken } from '../utils/jwt';
 
@@ -24,7 +25,11 @@ const getBearerToken = (authorizationHeader?: string): string | null => {
   return token;
 };
 
-export const authenticateUser = (req: Request, res: Response, next: NextFunction): void => {
+export const authenticateUser = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void => {
   const token = getBearerToken(req.headers.authorization);
 
   if (!token) {
@@ -39,7 +44,7 @@ export const authenticateUser = (req: Request, res: Response, next: NextFunction
     req.user = verifyToken(token);
     next();
     return;
-  } catch (error) {
+  } catch {
     res.status(401).json({
       success: false,
       message: 'Invalid or expired authentication token',
@@ -48,28 +53,38 @@ export const authenticateUser = (req: Request, res: Response, next: NextFunction
   }
 };
 
-export const requireAdmin = (req: Request, _res: Response, next: NextFunction): void => {
-  try {
-    const token = getBearerToken(req.headers.authorization);
+export const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
+  authenticateUser(req, res, next);
+};
 
-    if (!token) {
-      throw new AppError('Authentication token is required', 401);
-    }
-
-    const payload = verifyToken(token);
-
-    if (payload.role !== 'ADMIN') {
-      throw new AppError('Forbidden: Admin access required', 403);
-    }
-
-    req.user = payload;
-    next();
-  } catch (error) {
-    if (error instanceof AppError) {
+export const requireUser = (req: Request, res: Response, next: NextFunction): void => {
+  authenticateUser(req, res, (error?: unknown) => {
+    if (error) {
       next(error);
       return;
     }
 
-    next(new AppError('Invalid or expired authentication token', 401));
-  }
+    if (!req.user || req.user.role !== Role.DONOR) {
+      next(new AppError('Forbidden: User access required', 403));
+      return;
+    }
+
+    next();
+  });
+};
+
+export const requireAdmin = (req: Request, res: Response, next: NextFunction): void => {
+  authenticateUser(req, res, (error?: unknown) => {
+    if (error) {
+      next(error);
+      return;
+    }
+
+    if (!req.user || (req.user.role !== 'ADMIN' && req.user.isAdmin !== true)) {
+      next(new AppError('Forbidden: Admin access required', 403));
+      return;
+    }
+
+    next();
+  });
 };

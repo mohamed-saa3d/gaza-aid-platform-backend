@@ -1,5 +1,2 @@
-export { requireAuth } from './requireAuth';
-export { requireUser } from './requireUser';
-export { requireAdmin } from './requireAdmin';
+export { requireAuth, requireUser, requireAdmin, authenticateUser } from '../middlewares/auth.middleware';
 export { isRootAdmin } from './isRootAdmin';
-export { authenticateUser } from './authenticate';
