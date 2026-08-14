@@ -4,7 +4,6 @@ model Category {
   nameEn    String   @unique
   createdAt DateTime @default(now())
 
-  // Relations
   projects Project[]
 }
 
@@ -14,13 +13,12 @@ model Project {
   titleEn         String
   descriptionAr   String
   descriptionEn   String
-  imgUrl          String   @default("https://via.placeholder.com/600x400?text=No+Image")
+  imgUrl          String        @default("https://via.placeholder.com/600x400?text=No+Image")
   imgPublicId     String?
   targetAmount    Float
   collectedAmount Float         @default(0)
   status          ProjectStatus @default(ACTIVE)
 
-  // Relations
   categoryId String     @db.ObjectId
   category   Category   @relation(fields: [categoryId], references: [id])
   donations  Donation[]

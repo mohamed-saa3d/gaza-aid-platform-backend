@@ -1,23 +1,23 @@
 model Wallet {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId     String   @unique @db.ObjectId
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  balance    Float    @default(0)
-  currency   String   @default("EGP")
-  status     WalletStatus @default(ACTIVE)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String       @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String       @unique @db.ObjectId
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance   Float        @default(0)
+  currency  String       @default("EGP")
+  status    WalletStatus @default(ACTIVE)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 
   transactions WalletTransaction[]
 }
 
 model WalletTransaction {
-  id          String                    @id @default(auto()) @map("_id") @db.ObjectId
-  walletId    String                    @db.ObjectId
-  wallet      Wallet                    @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  id          String                  @id @default(auto()) @map("_id") @db.ObjectId
+  walletId    String                  @db.ObjectId
+  wallet      Wallet                  @relation(fields: [walletId], references: [id], onDelete: Cascade)
   amount      Float
   type        WalletTransactionType
-  status      WalletTransactionStatus   @default(PENDING)
+  status      WalletTransactionStatus @default(PENDING)
   referenceId String?
-  createdAt   DateTime                  @default(now())
+  createdAt   DateTime                @default(now())
 }
