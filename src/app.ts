@@ -29,8 +29,8 @@ app.use(helmet());
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || env.NODE_ENV !== 'production') {
-        callback(null, true);
+      if (!origin) {
+        callback(new Error('CORS origin is required'));
         return;
       }
 

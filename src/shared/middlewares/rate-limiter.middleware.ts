@@ -12,6 +12,7 @@ export const globalRateLimiter = rateLimit({
     success: false,
     message: 'Too many requests, please try again later.',
   },
+  store: new RedisStore({ sendCommand: (...args: string[]) => redisClient.sendCommand(args) }),
 });
 
 export const authRateLimiter = rateLimit({
