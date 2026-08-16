@@ -126,10 +126,24 @@ export const authService = {
     };
   },
 
-  async verifyEmail(otp: string) {
+  async verifyEmail(email: string, otp: string) {
+    const normalizedEmail = normalizeEmail(email);
+    const user = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      select: { id: true },
+    });
+
+    if (!user) {
+      throw new AppError('User was not found', 404);
+    }
+
     const tokenHash = hashToken(otp);
-    const authToken = await prisma.authToken.findUnique({
-      where: { token: tokenHash },
+    const authToken = await prisma.authToken.findFirst({
+      where: { 
+        token: tokenHash,
+        userId: user.id,
+        type: 'EMAIL_VERIFICATION'
+      },
       select: {
         id: true,
         userId: true,
@@ -140,13 +154,12 @@ export const authService = {
 
     if (
       !authToken ||
-      authToken.type !== 'EMAIL_VERIFICATION' ||
       authToken.expiresAt <= new Date()
     ) {
       throw new AppError('Invalid or expired email verification token', 400);
     }
 
-    const [user] = await prisma.$transaction([
+    const [updatedUser] = await prisma.$transaction([
       prisma.user.update({
         where: { id: authToken.userId },
         data: { isEmailVerified: true },
@@ -155,7 +168,7 @@ export const authService = {
       prisma.authToken.delete({ where: { id: authToken.id } }),
     ]);
 
-    return user;
+    return updatedUser;
   },
 
   async forgotPassword(email: string) {
@@ -194,8 +207,8 @@ export const authService = {
 
   async resetPassword(otp: string, newPassword: string) {
     const tokenHash = hashToken(otp);
-    const authToken = await prisma.authToken.findUnique({
-      where: { token: tokenHash },
+    const authToken = await prisma.authToken.findFirst({
+      where: { token: tokenHash, type: 'PASSWORD_RESET' },
       select: {
         id: true,
         userId: true,

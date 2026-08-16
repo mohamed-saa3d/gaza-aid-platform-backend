@@ -50,7 +50,7 @@ export const login: RequestHandler = async (req, res, next) => {
 
 export const verifyEmail: RequestHandler = async (req, res, next) => {
   try {
-    await authService.verifyEmail(req.body.otp);
+    await authService.verifyEmail(req.body.email, req.body.otp);
 
     res.status(200).json({
       success: true,
