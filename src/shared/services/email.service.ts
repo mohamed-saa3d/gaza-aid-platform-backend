@@ -1,9 +1,9 @@
 import { env } from '../../config/env';
-import { smtpConfigured, transport } from './email/email.transporter';
 import {
   renderVerificationHtml,
   renderPasswordResetHtml,
 } from './email/email.templates';
+import { emailQueue } from '../../queues/email.queue';
 
 export const emailService = {
   async sendVerificationEmail(to: string, otp: string) {
@@ -14,14 +14,7 @@ export const emailService = {
       html: renderVerificationHtml(otp),
     };
 
-    if (!smtpConfigured || !transport) {
-      console.log(
-        `[Mock Email] Sent to ${to} (Subject: ${message.subject}) - Content hidden for security.`,
-      );
-      return;
-    }
-
-    await transport.sendMail(message);
+    await emailQueue.add('verification', message);
   },
 
   async sendPasswordResetEmail(to: string, otp: string) {
@@ -32,13 +25,6 @@ export const emailService = {
       html: renderPasswordResetHtml(otp),
     };
 
-    if (!smtpConfigured || !transport) {
-      console.log(
-        `[Mock Email] Sent to ${to} (Subject: ${message.subject}) - Content hidden for security.`,
-      );
-      return;
-    }
-
-    await transport.sendMail(message);
+    await emailQueue.add('password-reset', message);
   },
 };

@@ -26,24 +26,33 @@ export const app = express();
 
 app.set('trust proxy', 1);
 app.use(helmet());
-app.use(
-  cors({
-    origin(origin, callback) {
-      if (!origin) {
-        callback(new Error('CORS origin is required'));
-        return;
-      }
+const browserCors = cors({
+  origin(origin, callback) {
+    if (origin && env.ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true);
+      return;
+    }
 
-      if (env.ALLOWED_ORIGINS.includes(origin)) {
-        callback(null, true);
-        return;
-      }
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+});
 
-      callback(new Error('Not allowed by CORS'));
-    },
-    credentials: true,
-  }),
-);
+app.use((req, res, next) => {
+  const isOriginlessWebhook =
+    !req.headers.origin &&
+    [
+      `${env.API_PREFIX}/payments/webhook`,
+      `${env.API_PREFIX}/donations/webhook`,
+    ].includes(req.path);
+
+  if (isOriginlessWebhook) {
+    next();
+    return;
+  }
+
+  browserCors(req, res, next);
+});
 app.use(
   express.json({
     verify(req, _res, buffer) {
@@ -66,12 +75,13 @@ app.get('/health', (_req, res) => {
   res.status(200).json({ success: true, message: 'Backend is healthy' });
 });
 
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-// إتاحة ملف الـ Swagger كـ JSON مباشر
-app.get('/api-docs-json', (_req, res) => {
-  res.setHeader('Content-Type', 'application/json');
-  res.send(swaggerSpec);
-});
+if (env.NODE_ENV !== 'production') {
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  app.get('/api-docs-json', (_req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerSpec);
+  });
+}
 
 app.use(`${env.API_PREFIX}/admin`, adminRoutes);
 app.use(`${env.API_PREFIX}/auth`, authRoutes);

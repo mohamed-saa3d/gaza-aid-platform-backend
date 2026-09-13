@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../shared/database/prisma';
 import { isPrismaKnownRequestError } from '../../shared/utils/prisma-error';
+import { broadcastQueue } from '../../queues/broadcast.queue';
 import type {
   BroadcastMessageInput,
   GetAllSubscribersInput,
@@ -62,25 +63,11 @@ export const subscribersService = {
   },
 
   async broadcastMessage(input: BroadcastMessageInput) {
-    const subscribers = await prisma.subscriber.findMany({
-      where: { isActive: true },
-      select: {
-        id: true,
-        email: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    for (const subscriber of subscribers) {
-      console.log(
-        `Mock broadcast to ${subscriber.email}: ${input.subject} - ${input.message}`,
-      );
-    }
+    const job = await broadcastQueue.add('subscriber-broadcast', input);
 
     return {
-      targetedSubscribers: subscribers.length,
+      jobId: job.id,
+      status: 'queued' as const,
     };
   },
 
