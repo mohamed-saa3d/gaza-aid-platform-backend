@@ -14,6 +14,7 @@ model User {
   donations      Donation[]
   platformRating PlatformRating?
   tokens         AuthToken[]
+  refreshSessions RefreshSession[]
   wallet         Wallet?
   paymentIntents PaymentIntent[]
 }

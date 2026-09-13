@@ -83,13 +83,36 @@ export const refreshToken: RequestHandler = async (req, res, next) => {
       throw new AppError('Refresh token cookie is missing', 401);
     }
 
-    const { accessToken } = await authService.refreshAccessToken(refreshToken);
+    const { accessToken, refreshToken: rotatedRefreshToken } =
+      await authService.refreshAccessToken(refreshToken);
+
+    res.cookie('refreshToken', rotatedRefreshToken, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
 
     res.status(200).json({
       success: true,
       message: 'Access token refreshed successfully',
       data: { accessToken },
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const logout: RequestHandler = async (req, res, next) => {
+  try {
+    const refreshToken = req.cookies?.refreshToken;
+
+    if (refreshToken) {
+      await authService.revokeRefreshToken(refreshToken);
+    }
+
+    res.clearCookie('refreshToken');
+    res.status(204).send();
   } catch (error) {
     next(error);
   }

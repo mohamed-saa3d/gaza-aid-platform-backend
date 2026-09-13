@@ -14,3 +14,17 @@ model AuthToken {
 
   @@index([userId, token])
 }
+
+model RefreshSession {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String    @db.ObjectId
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  familyId  String
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, revokedAt])
+  @@index([familyId])
+}

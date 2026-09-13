@@ -1,6 +1,49 @@
-version: '3.8'
-
 services:
+  mongodb:
+    image: mongo:7
+    container_name: qaza_mongodb
+    restart: unless-stopped
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok' | grep 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  mongodb-init:
+    image: mongo:7
+    container_name: qaza_mongodb_init
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    entrypoint: ["mongosh", "--host", "mongodb:27017", "--quiet", "--eval"]
+    command:
+      - >-
+        try { rs.status() } catch (e) {
+          rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: 'mongodb:27017' }] })
+        }
+    restart: 'no'
+
+  redis:
+    image: redis:7-alpine
+    container_name: qaza_redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
   qaza-backend:
     build:
       context: .
@@ -11,8 +54,18 @@ services:
       - '5000:5000'
     env_file:
       - .env
+    environment:
+      DATABASE_URL: mongodb://mongodb:27017/qaza?replicaSet=rs0
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      mongodb-init:
+        condition: service_completed_successfully
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     healthcheck:
-      test: ['CMD-SHELL', 'wget --no-verbose --tries=1 --spider http://localhost:5000/api/settings || exit 1']
+      test: ['CMD-SHELL', 'wget --no-verbose --tries=1 --spider http://localhost:5000/health || exit 1']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -22,3 +75,7 @@ services:
       options:
         max-size: '10m'
         max-file: '3'
+
+volumes:
+  mongodb_data:
+  redis_data:

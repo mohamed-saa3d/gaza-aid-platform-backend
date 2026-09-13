@@ -1,6 +1,6 @@
 import rateLimit from 'express-rate-limit';
 import { env } from '../../config/env';
-const RedisStore = require('rate-limit-redis');
+import { RedisStore } from 'rate-limit-redis';
 import redisClient from '../../config/redis.config';
 
 export const globalRateLimiter = rateLimit({
