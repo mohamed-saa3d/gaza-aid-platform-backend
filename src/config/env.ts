@@ -30,6 +30,7 @@ export const env = {
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN ?? '15m',
   JWT_REFRESH_SECRET: getRequired('JWT_REFRESH_SECRET'),
   JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN ?? '7d',
+  WEBHOOK_SIGNATURE_SECRET: getRequired('WEBHOOK_SIGNATURE_SECRET'),
   SMTP_HOST: process.env.SMTP_HOST,
   SMTP_PORT: toNumber(process.env.SMTP_PORT, 587),
   SMTP_USER: process.env.SMTP_USER,

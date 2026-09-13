@@ -33,10 +33,17 @@ export const paymentsService = {
         return { message: 'Payment intent already processed or not found' };
       }
 
-      await tx.paymentIntent.update({
-        where: { id: input.paymentIntentId },
+      const updateResult = await tx.paymentIntent.updateMany({
+        where: {
+          id: input.paymentIntentId,
+          status: PaymentIntentStatus.PENDING,
+        },
         data: { status: input.gatewayStatus },
       });
+
+      if (updateResult.count !== 1) {
+        return { message: 'Payment intent already processed or not found' };
+      }
 
       if (input.gatewayStatus === 'SUCCESS' && intent.purpose === PaymentPurpose.WALLET_FUNDING) {
         await walletService.processTransaction(

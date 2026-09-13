@@ -1,6 +1,6 @@
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import express from 'express';
+import express, { type Request } from 'express';
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
 import { env } from './config/env';
@@ -44,7 +44,20 @@ app.use(
     credentials: true,
   }),
 );
-app.use(express.json());
+app.use(
+  express.json({
+    verify(req, _res, buffer) {
+      const request = req as Request;
+
+      if (
+        request.path === `${env.API_PREFIX}/payments/webhook` ||
+        request.path === `${env.API_PREFIX}/donations/webhook`
+      ) {
+        request.rawBody = Buffer.from(buffer);
+      }
+    },
+  }),
+);
 app.use(cookieParser());
 app.use(requestLoggerMiddleware);
 app.use(globalRateLimiter);

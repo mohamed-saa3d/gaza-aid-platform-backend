@@ -1,6 +1,6 @@
 model Donation {
   id            String         @id @default(auto()) @map("_id") @db.ObjectId
-  amount        Float
+  amount        Int
   currency      String
   status        DonationStatus @default(PENDING)
   transactionId String?        @unique

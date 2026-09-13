@@ -5,6 +5,7 @@ declare module 'redis';
 declare global {
   namespace Express {
     interface Request {
+      rawBody?: Buffer;
       file?: {
         fieldname: string;
         originalname: string;

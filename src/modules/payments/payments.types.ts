@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const createCheckoutSchema = z.object({
   body: z.object({
-    amount: z.number().positive({ message: 'Amount must be greater than 0' }),
+    amount: z.number().int().positive({ message: 'Amount must be a positive integer in minor units' }),
     currency: z.string().min(1, { message: 'Currency is required' }).optional(),
     purpose: z.enum(['WALLET_FUNDING', 'DIRECT_DONATION']),
     referenceId: z.string().optional(),
