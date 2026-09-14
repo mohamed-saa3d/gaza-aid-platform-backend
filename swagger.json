@@ -7,10 +7,254 @@
   },
   "components": {
     "securitySchemes": {
-      "BearerAuth": {
+      "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "bearerFormat": "JWT"
+        "bearerFormat": "JWT",
+        "description": "JWT access token supplied in the Authorization header as Bearer <token>."
+      },
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "refreshToken",
+        "description": "HTTP-only refresh token cookie used for refresh/logout operations."
+      }
+    },
+    "schemas": {
+      "MinorAmountInteger": {
+        "type": "integer",
+        "description": "Monetary values are represented in minor units (for example, piasters/cents) as integers. Example: 2500 means 25.00 in the selected currency.",
+        "example": 2500
+      },
+      "ApiSuccessResponse": {
+        "type": "object",
+        "required": [
+          "success"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Request completed successfully"
+          },
+          "data": {
+            "nullable": true
+          }
+        }
+      },
+      "ApiErrorResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "message": {
+            "type": "string",
+            "example": "Validation failed"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string",
+                  "example": "invalid_type"
+                },
+                "path": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "example": [
+                    "body",
+                    "amount"
+                  ]
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Expected integer, received string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Donation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "65f000000000000000000004"
+          },
+          "amount": {
+            "$ref": "#/components/schemas/MinorAmountInteger",
+            "description": "Donation amount in minor units."
+          },
+          "currency": {
+            "type": "string",
+            "example": "EGP"
+          },
+          "projectId": {
+            "type": "string",
+            "example": "65f000000000000000000003"
+          },
+          "userId": {
+            "type": "string",
+            "example": "65f000000000000000000001"
+          }
+        }
+      },
+      "Project": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "65f000000000000000000003"
+          },
+          "targetAmount": {
+            "$ref": "#/components/schemas/MinorAmountInteger",
+            "description": "Project target amount in minor units."
+          },
+          "collectedAmount": {
+            "$ref": "#/components/schemas/MinorAmountInteger",
+            "description": "Funds collected so far in minor units."
+          },
+          "currency": {
+            "type": "string",
+            "example": "EGP"
+          },
+          "status": {
+            "type": "string",
+            "example": "ACTIVE"
+          }
+        }
+      },
+      "Wallet": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "65f000000000000000000005"
+          },
+          "userId": {
+            "type": "string",
+            "example": "65f000000000000000000001"
+          },
+          "balance": {
+            "$ref": "#/components/schemas/MinorAmountInteger",
+            "description": "Current wallet balance in minor units."
+          },
+          "currency": {
+            "type": "string",
+            "example": "EGP"
+          },
+          "status": {
+            "type": "string",
+            "example": "ACTIVE"
+          }
+        }
+      },
+      "PaymentIntent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "65f000000000000000000006"
+          },
+          "amount": {
+            "$ref": "#/components/schemas/MinorAmountInteger",
+            "description": "Payment amount in minor units."
+          },
+          "currency": {
+            "type": "string",
+            "example": "EGP"
+          },
+          "purpose": {
+            "type": "string",
+            "example": "WALLET_FUNDING"
+          },
+          "status": {
+            "type": "string",
+            "example": "PENDING"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad Request — validation failed or malformed payload.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "message": "Validation failed",
+              "errors": [
+                {
+                  "code": "invalid_type",
+                  "path": [
+                    "body",
+                    "amount"
+                  ],
+                  "message": "Expected integer, received string"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Unauthorized — invalid, missing, expired, or unsigned request.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "message": "Authentication is required"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Forbidden — authenticated user lacks permission.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "message": "Forbidden"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflict — the requested resource already exists or is in a conflicting state.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "message": "Email already exists"
+            }
+          }
+        }
       }
     }
   },
@@ -34,7 +278,7 @@
       "name": "Payments"
     },
     {
-      "name": "Wallets"
+      "name": "Wallet"
     },
     {
       "name": "News"
@@ -59,20 +303,27 @@
     "/api/wallets/me": {
       "get": {
         "tags": [
-          "Wallets"
+          "Wallet"
         ],
         "summary": "Get the authenticated user wallet",
         "security": [
           {
-            "BearerAuth": []
+            "bearerAuth": []
           }
         ],
         "responses": {
           "200": {
-            "description": "Wallet fetched successfully"
+            "description": "Wallet fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Wallet"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Authentication is required"
+            "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "description": "Wallet was not found"
@@ -83,12 +334,12 @@
     "/api/wallets/me/transactions": {
       "get": {
         "tags": [
-          "Wallets"
+          "Wallet"
         ],
         "summary": "List authenticated user wallet transactions",
         "security": [
           {
-            "BearerAuth": []
+            "bearerAuth": []
           }
         ],
         "responses": {
@@ -96,7 +347,7 @@
             "description": "Wallet transactions fetched successfully"
           },
           "401": {
-            "description": "Authentication is required"
+            "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "description": "Wallet was not found"
@@ -107,21 +358,33 @@
     "/api/wallets/me/deposit": {
       "post": {
         "tags": [
-          "Wallets"
+          "Wallet"
         ],
         "summary": "Deposit funds into the authenticated wallet",
         "security": [
           {
-            "BearerAuth": []
+            "bearerAuth": []
           }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "example": {
-                "amount": 100,
-                "currency": "USD"
+              "schema": {
+                "type": "object",
+                "required": [
+                  "amount"
+                ],
+                "properties": {
+                  "amount": {
+                    "$ref": "#/components/schemas/MinorAmountInteger",
+                    "description": "Deposit amount in minor units (cents/piasters). Example 2500 = 25.00."
+                  },
+                  "currency": {
+                    "type": "string",
+                    "example": "EGP"
+                  }
+                }
               }
             }
           }
@@ -131,10 +394,10 @@
             "description": "Wallet deposit initialized successfully"
           },
           "400": {
-            "description": "Invalid deposit amount or currency"
+            "$ref": "#/components/responses/BadRequest"
           },
           "401": {
-            "description": "Authentication is required"
+            "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "description": "Wallet was not found"
@@ -145,20 +408,29 @@
     "/api/wallets/me/withdraw": {
       "post": {
         "tags": [
-          "Wallets"
+          "Wallet"
         ],
         "summary": "Withdraw funds from the authenticated wallet",
         "security": [
           {
-            "BearerAuth": []
+            "bearerAuth": []
           }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "example": {
-                "amount": 50
+              "schema": {
+                "type": "object",
+                "required": [
+                  "amount"
+                ],
+                "properties": {
+                  "amount": {
+                    "$ref": "#/components/schemas/MinorAmountInteger",
+                    "description": "Withdrawal amount in minor units (cents/piasters). Example 500 = 5.00."
+                  }
+                }
               }
             }
           }
@@ -168,10 +440,10 @@
             "description": "Withdrawal completed successfully"
           },
           "400": {
-            "description": "Invalid amount or insufficient balance"
+            "$ref": "#/components/responses/BadRequest"
           },
           "401": {
-            "description": "Authentication is required"
+            "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "description": "Wallet was not found"
@@ -669,7 +941,17 @@
         "summary": "List active projects",
         "responses": {
           "200": {
-            "description": "Projects fetched successfully"
+            "description": "Projects fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Project"
+                  }
+                }
+              }
+            }
           },
           "404": {
             "description": "Projects were not found"
@@ -683,7 +965,7 @@
         "summary": "Create a project",
         "security": [
           {
-            "BearerAuth": []
+            "bearerAuth": []
           }
         ],
         "requestBody": {
@@ -701,15 +983,40 @@
                   "status",
                   "categoryId"
                 ],
-                "example": {
-                  "titleAr": "مشروع غذائي",
-                  "titleEn": "Food Project",
-                  "descriptionAr": "وصف المشروع باللغة العربية",
-                  "descriptionEn": "Project description in English",
-                  "imageUrl": "https://cdn.example.com/project.jpg",
-                  "targetAmount": 10000,
-                  "status": "ACTIVE",
-                  "categoryId": "65f000000000000000000002"
+                "properties": {
+                  "titleAr": {
+                    "type": "string",
+                    "example": "مشروع غذائي"
+                  },
+                  "titleEn": {
+                    "type": "string",
+                    "example": "Food Project"
+                  },
+                  "descriptionAr": {
+                    "type": "string",
+                    "example": "وصف المشروع باللغة العربية"
+                  },
+                  "descriptionEn": {
+                    "type": "string",
+                    "example": "Project description in English"
+                  },
+                  "imageUrl": {
+                    "type": "string",
+                    "format": "uri",
+                    "example": "https://cdn.example.com/project.jpg"
+                  },
+                  "targetAmount": {
+                    "$ref": "#/components/schemas/MinorAmountInteger",
+                    "description": "Project funding target in minor units (cents/piasters). Example 10000 = 100.00."
+                  },
+                  "status": {
+                    "type": "string",
+                    "example": "ACTIVE"
+                  },
+                  "categoryId": {
+                    "type": "string",
+                    "example": "65f000000000000000000002"
+                  }
                 }
               }
             }
@@ -720,10 +1027,10 @@
             "description": "Project created successfully"
           },
           "400": {
-            "description": "Validation failed"
+            "$ref": "#/components/responses/BadRequest"
           },
           "401": {
-            "description": "Admin authentication required"
+            "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "description": "Category was not found"
@@ -750,10 +1057,17 @@
         ],
         "responses": {
           "200": {
-            "description": "Project fetched successfully"
+            "description": "Project fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            }
           },
           "400": {
-            "description": "Invalid project ID"
+            "$ref": "#/components/responses/BadRequest"
           },
           "404": {
             "description": "Project was not found"
@@ -767,7 +1081,7 @@
         "summary": "Update a project",
         "security": [
           {
-            "BearerAuth": []
+            "bearerAuth": []
           }
         ],
         "parameters": [
@@ -785,10 +1099,22 @@
           "required": true,
           "content": {
             "application/json": {
-              "example": {
-                "titleEn": "Updated Food Project",
-                "targetAmount": 15000,
-                "status": "COMPLETED"
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "titleEn": {
+                    "type": "string",
+                    "example": "Updated Food Project"
+                  },
+                  "targetAmount": {
+                    "$ref": "#/components/schemas/MinorAmountInteger",
+                    "description": "Updated project funding target in minor units."
+                  },
+                  "status": {
+                    "type": "string",
+                    "example": "COMPLETED"
+                  }
+                }
               }
             }
           }
@@ -798,10 +1124,10 @@
             "description": "Project updated successfully"
           },
           "400": {
-            "description": "Invalid project data"
+            "$ref": "#/components/responses/BadRequest"
           },
           "401": {
-            "description": "Admin authentication required"
+            "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "description": "Project was not found"
@@ -815,7 +1141,7 @@
         "summary": "Soft-delete a project",
         "security": [
           {
-            "BearerAuth": []
+            "bearerAuth": []
           }
         ],
         "parameters": [
@@ -834,10 +1160,10 @@
             "description": "Project deleted successfully"
           },
           "400": {
-            "description": "Invalid project ID"
+            "$ref": "#/components/responses/BadRequest"
           },
           "401": {
-            "description": "Admin authentication required"
+            "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "description": "Project was not found"
@@ -853,18 +1179,40 @@
         "summary": "Create a payment checkout session",
         "security": [
           {
-            "BearerAuth": []
+            "bearerAuth": []
           }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "example": {
-                "amount": 250,
-                "currency": "USD",
-                "purpose": "WALLET_FUNDING",
-                "referenceId": "wallet-topup-123"
+              "schema": {
+                "type": "object",
+                "required": [
+                  "amount",
+                  "purpose"
+                ],
+                "properties": {
+                  "amount": {
+                    "$ref": "#/components/schemas/MinorAmountInteger",
+                    "description": "Amount to charge in minor units (cents/piasters). Example 2500 = 25.00."
+                  },
+                  "currency": {
+                    "type": "string",
+                    "example": "EGP"
+                  },
+                  "purpose": {
+                    "type": "string",
+                    "enum": [
+                      "WALLET_FUNDING",
+                      "DIRECT_DONATION"
+                    ]
+                  },
+                  "referenceId": {
+                    "type": "string",
+                    "example": "wallet-topup-123"
+                  }
+                }
               }
             }
           }
@@ -874,10 +1222,10 @@
             "description": "Checkout session created successfully"
           },
           "400": {
-            "description": "Invalid checkout data"
+            "$ref": "#/components/responses/BadRequest"
           },
           "401": {
-            "description": "Authentication is required"
+            "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "description": "Referenced resource was not found"
@@ -891,26 +1239,57 @@
           "Payments"
         ],
         "summary": "Process a payment gateway webhook",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-webhook-signature",
+            "required": true,
+            "description": "HMAC-SHA256 signature formatted as t=timestamp,v1=signature",
+            "schema": {
+              "type": "string",
+              "example": "t=1726155900,v1=3d4d6a5c0ce91d7a9c3d3d6d1d4a5d6f7e8a9d0b7f5a6d8d8f0d0f5c0a0b"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "example": {
-                "paymentIntentId": "65f000000000000000000005",
-                "gatewayStatus": "SUCCESS"
+              "schema": {
+                "type": "object",
+                "required": [
+                  "paymentIntentId",
+                  "gatewayStatus"
+                ],
+                "properties": {
+                  "paymentIntentId": {
+                    "type": "string",
+                    "example": "65f000000000000000000005"
+                  },
+                  "gatewayStatus": {
+                    "type": "string",
+                    "enum": [
+                      "SUCCESS",
+                      "FAILED"
+                    ]
+                  }
+                }
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Gateway webhook processed idempotently"
+            "description": "Webhook processed successfully or idempotently acknowledged."
+          },
+          "204": {
+            "description": "Webhook processed successfully with no content."
           },
           "400": {
-            "description": "Invalid payment intent or gateway status"
+            "$ref": "#/components/responses/BadRequest"
           },
-          "404": {
-            "description": "Payment intent was not found"
+          "401": {
+            "description": "Missing or invalid x-webhook-signature header."
           }
         }
       }
@@ -1403,11 +1782,31 @@
           "required": true,
           "content": {
             "application/json": {
-              "example": {
-                "amount": 100,
-                "currency": "USD",
-                "projectId": "65f000000000000000000003",
-                "userId": "65f000000000000000000001"
+              "schema": {
+                "type": "object",
+                "required": [
+                  "amount",
+                  "currency",
+                  "projectId"
+                ],
+                "properties": {
+                  "amount": {
+                    "$ref": "#/components/schemas/MinorAmountInteger",
+                    "description": "Donation amount in minor units (cents/piasters). Example 1000 = 10.00."
+                  },
+                  "currency": {
+                    "type": "string",
+                    "example": "EGP"
+                  },
+                  "projectId": {
+                    "type": "string",
+                    "example": "65f000000000000000000003"
+                  },
+                  "userId": {
+                    "type": "string",
+                    "example": "65f000000000000000000001"
+                  }
+                }
               }
             }
           }
@@ -1417,9 +1816,7 @@
             "description": "Donation initialized successfully"
           },
           "400": {
-            "description": "Invalid amount",
-            "project ID": null,
-            "or user ID": null
+            "$ref": "#/components/responses/BadRequest"
           },
           "404": {
             "description": "Project or user was not found"
@@ -1433,26 +1830,54 @@
           "Donations"
         ],
         "summary": "Process a donation payment webhook idempotently",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-webhook-signature",
+            "required": true,
+            "description": "HMAC-SHA256 signature formatted as t=timestamp,v1=signature",
+            "schema": {
+              "type": "string",
+              "example": "t=1726155900,v1=3d4d6a5c0ce91d7a9c3d3d6d1d4a5d6f7e8a9d0b7f5a6d8d8f0d0f5c0a0b"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "example": {
-                "donationId": "65f000000000000000000004",
-                "transactionId": "gateway-tx-123"
+              "schema": {
+                "type": "object",
+                "required": [
+                  "donationId",
+                  "transactionId"
+                ],
+                "properties": {
+                  "donationId": {
+                    "type": "string",
+                    "example": "65f000000000000000000004"
+                  },
+                  "transactionId": {
+                    "type": "string",
+                    "example": "gateway-tx-123"
+                  }
+                }
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Payment webhook processed successfully"
+            "description": "Webhook processed successfully or idempotently acknowledged."
+          },
+          "204": {
+            "description": "Webhook processed successfully with no content."
           },
           "400": {
-            "description": "Invalid donation or transaction data"
+            "$ref": "#/components/responses/BadRequest"
           },
-          "404": {
-            "description": "Donation was not found"
+          "401": {
+            "description": "Missing or invalid x-webhook-signature header."
           }
         }
       }
@@ -1465,7 +1890,7 @@
         "summary": "List donations for administrators",
         "security": [
           {
-            "BearerAuth": []
+            "bearerAuth": []
           }
         ],
         "parameters": [
@@ -1495,10 +1920,10 @@
             "description": "Donations fetched successfully"
           },
           "401": {
-            "description": "Admin authentication required"
+            "$ref": "#/components/responses/Unauthorized"
           },
-          "404": {
-            "description": "Donations were not found"
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
           }
         }
       }
@@ -1526,7 +1951,7 @@
             "description": "Project donations fetched successfully"
           },
           "400": {
-            "description": "Invalid project ID"
+            "$ref": "#/components/responses/BadRequest"
           },
           "404": {
             "description": "Project was not found"
@@ -1578,13 +2003,20 @@
         },
         "responses": {
           "201": {
-            "description": "Registration started successfully"
+            "description": "Registration initiated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccessResponse"
+                }
+              }
+            }
           },
           "400": {
-            "description": "Validation failed"
+            "$ref": "#/components/responses/BadRequest"
           },
           "409": {
-            "description": "Email already exists"
+            "$ref": "#/components/responses/Conflict"
           }
         }
       }
@@ -1623,13 +2055,43 @@
         },
         "responses": {
           "200": {
-            "description": "Login successful"
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "User logged in successfully"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "accessToken": {
+                          "type": "string",
+                          "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                        },
+                        "user": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "400": {
-            "description": "Validation failed"
+            "$ref": "#/components/responses/BadRequest"
           },
           "401": {
-            "description": "Invalid credentials"
+            "$ref": "#/components/responses/Unauthorized"
           },
           "429": {
             "description": "Too many login attempts"
@@ -1642,13 +2104,72 @@
         "tags": [
           "Auth"
         ],
-        "summary": "Refresh the access token using the refresh token cookie",
+        "summary": "Refresh the access token using the refreshToken cookie",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Access token refreshed successfully"
+            "description": "Access token refreshed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Access token refreshed successfully"
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "accessToken"
+                      ],
+                      "properties": {
+                        "accessToken": {
+                          "type": "string",
+                          "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "401": {
-            "description": "Refresh token cookie is missing or invalid"
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Log out the authenticated user and revoke the refresh token",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Logged out successfully. The refreshToken cookie is cleared."
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
           }
         }
       }
@@ -1666,9 +2187,15 @@
               "schema": {
                 "type": "object",
                 "required": [
+                  "email",
                   "otp"
                 ],
                 "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "donor@example.com"
+                  },
                   "otp": {
                     "type": "string",
                     "example": "123456"
@@ -1683,7 +2210,7 @@
             "description": "Email verified successfully"
           },
           "400": {
-            "description": "Validation failed"
+            "$ref": "#/components/responses/BadRequest"
           }
         }
       }
@@ -1719,7 +2246,7 @@
             "description": "Password reset flow started"
           },
           "400": {
-            "description": "Validation failed"
+            "$ref": "#/components/responses/BadRequest"
           }
         }
       }
@@ -1760,7 +2287,7 @@
             "description": "Password reset successfully"
           },
           "400": {
-            "description": "Validation failed"
+            "$ref": "#/components/responses/BadRequest"
           }
         }
       }
@@ -1773,7 +2300,7 @@
         "summary": "Change the authenticated donor password",
         "security": [
           {
-            "BearerAuth": []
+            "bearerAuth": []
           }
         ],
         "requestBody": {
@@ -1807,10 +2334,10 @@
             "description": "Password changed successfully"
           },
           "400": {
-            "description": "Validation failed"
+            "$ref": "#/components/responses/BadRequest"
           },
           "401": {
-            "description": "Authentication is required"
+            "$ref": "#/components/responses/Unauthorized"
           }
         }
       }

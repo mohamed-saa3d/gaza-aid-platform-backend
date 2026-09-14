@@ -2,8 +2,7 @@
  * @openapi
  * /api/auth/register:
  *   post:
- *     tags:
- *       - Auth
+ *     tags: [Auth]
  *     summary: Register a new donor account
  *     requestBody:
  *       required: true
@@ -11,10 +10,7 @@
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - name
- *               - email
- *               - password
+ *             required: [name, email, password]
  *             properties:
  *               name:
  *                 type: string
@@ -33,19 +29,22 @@
  *                 example: https://cdn.example.com/avatar.jpg
  *     responses:
  *       201:
- *         description: Registration started successfully
+ *         description: Registration initiated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiSuccessResponse'
  *       400:
- *         description: Validation failed
+ *         $ref: '#/components/responses/BadRequest'
  *       409:
- *         description: Email already exists
+ *         $ref: '#/components/responses/Conflict'
  */
 
 /**
  * @openapi
  * /api/auth/login:
  *   post:
- *     tags:
- *       - Auth
+ *     tags: [Auth]
  *     summary: Log in a donor account
  *     requestBody:
  *       required: true
@@ -53,9 +52,7 @@
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - email
- *               - password
+ *             required: [email, password]
  *             properties:
  *               email:
  *                 type: string
@@ -68,10 +65,22 @@
  *     responses:
  *       200:
  *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 message: { type: string, example: User logged in successfully }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     accessToken: { type: string, example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... }
+ *                     user: { type: object, additionalProperties: true }
  *       400:
- *         description: Validation failed
+ *         $ref: '#/components/responses/BadRequest'
  *       401:
- *         description: Invalid credentials
+ *         $ref: '#/components/responses/Unauthorized'
  *       429:
  *         description: Too many login attempts
  */
@@ -80,22 +89,56 @@
  * @openapi
  * /api/auth/refresh:
  *   post:
- *     tags:
- *       - Auth
- *     summary: Refresh the access token using the refresh token cookie
+ *     tags: [Auth]
+ *     summary: Refresh the access token using the refreshToken cookie
+ *     security:
+ *       - cookieAuth: []
  *     responses:
  *       200:
  *         description: Access token refreshed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [success, data]
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Access token refreshed successfully
+ *                 data:
+ *                   type: object
+ *                   required: [accessToken]
+ *                   properties:
+ *                     accessToken:
+ *                       type: string
+ *                       example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
  *       401:
- *         description: Refresh token cookie is missing or invalid
+ *         $ref: '#/components/responses/Unauthorized'
+ */
+
+/**
+ * @openapi
+ * /api/auth/logout:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Log out the authenticated user and revoke the refresh token
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       204:
+ *         description: Logged out successfully. The refreshToken cookie is cleared.
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
  */
 
 /**
  * @openapi
  * /api/auth/verify-email:
  *   post:
- *     tags:
- *       - Auth
+ *     tags: [Auth]
  *     summary: Verify a donor email address with a six-digit OTP
  *     requestBody:
  *       required: true
@@ -103,9 +146,12 @@
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - otp
+ *             required: [email, otp]
  *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: donor@example.com
  *               otp:
  *                 type: string
  *                 example: "123456"
@@ -113,15 +159,14 @@
  *       200:
  *         description: Email verified successfully
  *       400:
- *         description: Validation failed
+ *         $ref: '#/components/responses/BadRequest'
  */
 
 /**
  * @openapi
  * /api/auth/forgot-password:
  *   post:
- *     tags:
- *       - Auth
+ *     tags: [Auth]
  *     summary: Request a password reset OTP
  *     requestBody:
  *       required: true
@@ -129,8 +174,7 @@
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - email
+ *             required: [email]
  *             properties:
  *               email:
  *                 type: string
@@ -140,15 +184,14 @@
  *       200:
  *         description: Password reset flow started
  *       400:
- *         description: Validation failed
+ *         $ref: '#/components/responses/BadRequest'
  */
 
 /**
  * @openapi
  * /api/auth/reset-password:
  *   post:
- *     tags:
- *       - Auth
+ *     tags: [Auth]
  *     summary: Reset a donor password using an OTP
  *     requestBody:
  *       required: true
@@ -156,9 +199,7 @@
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - otp
- *               - newPassword
+ *             required: [otp, newPassword]
  *             properties:
  *               otp:
  *                 type: string
@@ -171,27 +212,24 @@
  *       200:
  *         description: Password reset successfully
  *       400:
- *         description: Validation failed
+ *         $ref: '#/components/responses/BadRequest'
  */
 
 /**
  * @openapi
  * /api/auth/change-password:
  *   post:
- *     tags:
- *       - Auth
+ *     tags: [Auth]
  *     summary: Change the authenticated donor password
  *     security:
- *       - BearerAuth: []
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - oldPassword
- *               - newPassword
+ *             required: [oldPassword, newPassword]
  *             properties:
  *               oldPassword:
  *                 type: string
@@ -205,7 +243,7 @@
  *       200:
  *         description: Password changed successfully
  *       400:
- *         description: Validation failed
+ *         $ref: '#/components/responses/BadRequest'
  *       401:
- *         description: Authentication is required
+ *         $ref: '#/components/responses/Unauthorized'
  */
