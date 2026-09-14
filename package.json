@@ -10,7 +10,8 @@
     "db:studio": "npx prisma studio",
     "docker:run": "docker run",
     "swagger:export": "tsx scripts/generate-swagger-json.ts",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "smoke:test": "tsx scripts/smoke-test.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

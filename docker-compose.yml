@@ -57,6 +57,7 @@ services:
     environment:
       DATABASE_URL: mongodb://mongodb:27017/qaza?replicaSet=rs0
       REDIS_URL: redis://redis:6379
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
     depends_on:
       mongodb-init:
         condition: service_completed_successfully
@@ -87,6 +88,7 @@ services:
     environment:
       DATABASE_URL: mongodb://mongodb:27017/qaza?replicaSet=rs0
       REDIS_URL: redis://redis:6379
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
     depends_on:
       mongodb-init:
         condition: service_completed_successfully

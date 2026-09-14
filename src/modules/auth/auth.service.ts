@@ -131,30 +131,44 @@ export const authService = {
     const rotated = await prisma.$transaction(async (tx) => {
       const session = await tx.refreshSession.findFirst({
         where: {
-          id: payload.sessionId,
           tokenHash: hashToken(refreshToken),
-          revokedAt: null,
-          expiresAt: { gt: new Date() },
         },
-        select: { id: true, familyId: true, userId: true },
+        select: {
+          id: true,
+          familyId: true,
+          userId: true,
+          revokedAt: true,
+          expiresAt: true,
+        },
       });
 
-      if (!session) {
+      if (
+        !session ||
+        session.id !== payload.sessionId ||
+        session.revokedAt ||
+        session.expiresAt <= new Date()
+      ) {
         throw new AppError('Refresh token is invalid or expired', 401);
       }
 
       const user = await tx.user.findFirst({
-        where: { id: session.userId, deletedAt: null },
-        select: { id: true, role: true },
+        where: { id: session.userId },
+        select: { id: true, role: true, deletedAt: true },
       });
 
-      if (!user) {
+      if (!user || user.deletedAt) {
         throw new AppError('Refresh token is invalid or user no longer exists', 401);
       }
 
       const revoked = await tx.refreshSession.updateMany({
-        where: { id: session.id, revokedAt: null },
-        data: { revokedAt: new Date() },
+        where: {
+          id: session.id,
+          tokenHash: hashToken(refreshToken),
+        },
+        data: {
+          revokedAt: new Date(),
+          tokenHash: crypto.randomBytes(32).toString('hex'),
+        },
       });
 
       if (revoked.count !== 1) {
@@ -192,8 +206,11 @@ export const authService = {
 
   async revokeRefreshToken(refreshToken: string) {
     await prisma.refreshSession.updateMany({
-      where: { tokenHash: hashToken(refreshToken), revokedAt: null },
-      data: { revokedAt: new Date() },
+      where: { tokenHash: hashToken(refreshToken) },
+      data: {
+        revokedAt: new Date(),
+        tokenHash: crypto.randomBytes(32).toString('hex'),
+      },
     });
   },
 
@@ -238,7 +255,7 @@ export const authService = {
       }),
       prisma.authToken.delete({ where: { id: authToken.id } }),
       prisma.refreshSession.updateMany({
-        where: { userId: authToken.userId, revokedAt: null },
+        where: { userId: authToken.userId },
         data: { revokedAt: new Date() },
       }),
     ]);
@@ -337,7 +354,7 @@ export const authService = {
         select: userSelect,
       }),
       prisma.refreshSession.updateMany({
-        where: { userId, revokedAt: null },
+        where: { userId },
         data: { revokedAt: new Date() },
       }),
     ]);

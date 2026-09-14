@@ -42,6 +42,7 @@ app.use((req, res, next) => {
   const isOriginlessWebhook =
     !req.headers.origin &&
     [
+      '/health',
       `${env.API_PREFIX}/payments/webhook`,
       `${env.API_PREFIX}/donations/webhook`,
     ].includes(req.path);
