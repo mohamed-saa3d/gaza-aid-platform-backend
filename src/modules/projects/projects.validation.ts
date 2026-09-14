@@ -8,7 +8,7 @@ export const createProjectSchema = z.object({
     descriptionAr: z.string().trim().min(10, 'Arabic description is required'),
     descriptionEn: z.string().trim().min(10, 'English description is required'),
     imageUrl: z.string().trim().url('Invalid image URL').optional(),
-    targetAmount: z.number().positive('Target amount must be positive'),
+    targetAmount: z.coerce.number().positive('Target amount must be positive'),
     status: z.nativeEnum(ProjectStatus),
     categoryId: z.string().trim().min(1, 'Category ID is required'),
   }).strict(),
@@ -21,7 +21,7 @@ export const updateProjectSchema = z.object({
     descriptionAr: z.string().trim().min(10).optional(),
     descriptionEn: z.string().trim().min(10).optional(),
     imageUrl: z.string().trim().url('Invalid image URL').optional(),
-    targetAmount: z.number().positive('Target amount must be positive').optional(),
+    targetAmount: z.coerce.number().positive('Target amount must be positive').optional(),
     status: z.nativeEnum(ProjectStatus).optional(),
     categoryId: z.string().trim().min(1).optional(),
   }).refine((data) => Object.keys(data).length > 0, {

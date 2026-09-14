@@ -57,7 +57,13 @@ export const getProjects: RequestHandler = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: 'Projects fetched successfully',
-      data: result,
+      data: result.data,
+      meta: {
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+        totalPages: Math.ceil(result.total / result.limit),
+      },
     });
   } catch (error) {
     next(error);
