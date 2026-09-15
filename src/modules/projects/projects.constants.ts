@@ -9,6 +9,7 @@ export const projectSelect = {
   imgUrl: true,
   targetAmount: true,
   collectedAmount: true,
+  beneficiariesCount: true,
   status: true,
   category: {
     select: {

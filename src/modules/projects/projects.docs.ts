@@ -42,6 +42,11 @@
  *               targetAmount:
  *                 $ref: '#/components/schemas/MinorAmountInteger'
  *                 description: Project funding target in minor units (cents/piasters). Example 10000 = 100.00.
+ *               beneficiariesCount:
+ *                 type: integer
+ *                 minimum: 0
+ *                 description: Number of targeted or served beneficiaries.
+ *                 example: 500
  *               status: { type: string, example: ACTIVE }
  *               categoryId: { type: string, example: 65f000000000000000000002 }
  *     responses:
@@ -82,6 +87,11 @@
  *               targetAmount:
  *                 $ref: '#/components/schemas/MinorAmountInteger'
  *                 description: Updated project funding target in minor units.
+ *               beneficiariesCount:
+ *                 type: integer
+ *                 minimum: 0
+ *                 description: Number of targeted or served beneficiaries.
+ *                 example: 500
  *               status: { type: string, example: COMPLETED }
  *     responses:
  *       200: { description: Project updated successfully }

@@ -13,6 +13,11 @@ const calculateProgressPercentage = (collectedAmount: number, targetAmount: numb
   return Number(((collectedAmount / targetAmount) * 100).toFixed(2));
 };
 
+const withBeneficiariesCount = <T extends { beneficiariesCount?: number | null }>(project: T) => ({
+  ...project,
+  beneficiariesCount: project.beneficiariesCount ?? 0,
+});
+
 export const projectsService = {
   async getProjects(
     page = 1,
@@ -37,7 +42,7 @@ export const projectsService = {
 
     return {
       data: projects.map((project: any) => ({
-        ...project,
+        ...withBeneficiariesCount(project),
         progressPercentage: calculateProgressPercentage(project.collectedAmount, project.targetAmount),
       })),
       total,
@@ -57,7 +62,7 @@ export const projectsService = {
     }
 
     return {
-      ...project,
+      ...withBeneficiariesCount(project),
       progressPercentage: calculateProgressPercentage(project.collectedAmount, project.targetAmount),
     };
   },
@@ -94,7 +99,7 @@ export const projectsService = {
       throw new AppError('Category was not found', 404);
     }
 
-    return prisma.project.create({
+    const project = await prisma.project.create({
       data: {
         titleAr: sanitizedInput.titleAr.trim(),
         titleEn: sanitizedInput.titleEn.trim(),
@@ -103,11 +108,14 @@ export const projectsService = {
         imgUrl: sanitizedInput.imgUrl,
         imgPublicId: sanitizedInput.imgPublicId,
         targetAmount: sanitizedInput.targetAmount,
+        beneficiariesCount: sanitizedInput.beneficiariesCount,
         status: sanitizedInput.status,
         category: { connect: { id: sanitizedInput.categoryId } },
       } as any,
       select: projectSelect as any,
     });
+
+    return withBeneficiariesCount(project);
   },
 
   async updateProject(input: UpdateProjectInput) {
@@ -145,7 +153,7 @@ export const projectsService = {
       : sanitizedInput.status ?? existingProject.status;
 
     try {
-      return await prisma.project.update({
+      const project = await prisma.project.update({
         where: {
           id: sanitizedInput.id,
           updatedAt: existingProject.updatedAt,
@@ -158,11 +166,16 @@ export const projectsService = {
           ...(sanitizedInput.imgUrl !== undefined ? { imgUrl: sanitizedInput.imgUrl } : {}),
           ...(sanitizedInput.imgPublicId !== undefined ? { imgPublicId: sanitizedInput.imgPublicId } : {}),
           ...(sanitizedInput.targetAmount !== undefined ? { targetAmount: sanitizedInput.targetAmount } : {}),
+          ...(sanitizedInput.beneficiariesCount !== undefined
+            ? { beneficiariesCount: sanitizedInput.beneficiariesCount }
+            : {}),
           ...(sanitizedInput.categoryId ? { category: { connect: { id: sanitizedInput.categoryId } } } : {}),
           status: updatedStatus,
         } as any,
         select: projectSelect as any,
       });
+
+      return withBeneficiariesCount(project);
     } catch (error) {
       if (
         error instanceof AppError ||

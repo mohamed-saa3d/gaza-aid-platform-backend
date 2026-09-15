@@ -128,6 +128,12 @@
             "$ref": "#/components/schemas/MinorAmountInteger",
             "description": "Funds collected so far in minor units."
           },
+          "beneficiariesCount": {
+            "type": "integer",
+            "description": "Number of targeted or served beneficiaries.",
+            "minimum": 0,
+            "example": 500
+          },
           "currency": {
             "type": "string",
             "example": "EGP"
@@ -1009,6 +1015,12 @@
                     "$ref": "#/components/schemas/MinorAmountInteger",
                     "description": "Project funding target in minor units (cents/piasters). Example 10000 = 100.00."
                   },
+                  "beneficiariesCount": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Number of targeted or served beneficiaries.",
+                    "example": 500
+                  },
                   "status": {
                     "type": "string",
                     "example": "ACTIVE"
@@ -1109,6 +1121,12 @@
                   "targetAmount": {
                     "$ref": "#/components/schemas/MinorAmountInteger",
                     "description": "Updated project funding target in minor units."
+                  },
+                  "beneficiariesCount": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Number of targeted or served beneficiaries.",
+                    "example": 500
                   },
                   "status": {
                     "type": "string",

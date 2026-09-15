@@ -17,6 +17,7 @@ model Project {
   imgPublicId     String?
   targetAmount    Int
   collectedAmount Int           @default(0)
+  beneficiariesCount Int         @default(0)
   status          ProjectStatus @default(ACTIVE)
 
   categoryId String     @db.ObjectId

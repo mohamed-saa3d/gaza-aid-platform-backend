@@ -83,6 +83,12 @@ export const swaggerSpec = swaggerJsdoc({
               $ref: '#/components/schemas/MinorAmountInteger',
               description: 'Funds collected so far in minor units.',
             },
+            beneficiariesCount: {
+              type: 'integer',
+              description: 'Number of targeted or served beneficiaries.',
+              minimum: 0,
+              example: 500,
+            },
             currency: { type: 'string', example: 'EGP' },
             status: { type: 'string', example: 'ACTIVE' },
           },

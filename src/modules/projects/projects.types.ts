@@ -9,6 +9,7 @@ export type CreateProjectInput = {
   imgPublicId?: string;
   imgUrl?: string;
   targetAmount: number;
+  beneficiariesCount?: number;
   status: ProjectStatus;
   categoryId: string;
 };
@@ -23,6 +24,7 @@ export type UpdateProjectInput = {
   imgPublicId?: string | null;
   imgUrl?: string | null;
   targetAmount?: number;
+  beneficiariesCount?: number;
   status?: ProjectStatus;
   categoryId?: string;
 };
