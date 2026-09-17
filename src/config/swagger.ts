@@ -58,6 +58,23 @@ export const swaggerSpec = swaggerJsdoc({
             },
           },
         },
+        AdminRole: {
+          type: 'string',
+          enum: ['SUPER_ADMIN', 'ADMIN'],
+          description: 'Administrative role assigned to an administrator account.',
+        },
+        Admin: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: '65f000000000000000000001' },
+            name: { type: 'string', example: 'Operations Admin' },
+            email: { type: 'string', format: 'email', example: 'ops@example.com' },
+            role: { $ref: '#/components/schemas/AdminRole' },
+            isActive: { type: 'boolean', default: true, example: true },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
         Donation: {
           type: 'object',
           properties: {
@@ -141,7 +158,7 @@ export const swaggerSpec = swaggerJsdoc({
           content: {
             'application/json': {
               schema: { $ref: '#/components/schemas/ApiErrorResponse' },
-              example: { success: false, message: 'Authentication is required' },
+              example: { success: false, message: 'Unauthorized' },
             },
           },
         },
@@ -150,7 +167,7 @@ export const swaggerSpec = swaggerJsdoc({
           content: {
             'application/json': {
               schema: { $ref: '#/components/schemas/ApiErrorResponse' },
-              example: { success: false, message: 'Forbidden' },
+              example: { success: false, message: 'Forbidden: Super admin access required' },
             },
           },
         },

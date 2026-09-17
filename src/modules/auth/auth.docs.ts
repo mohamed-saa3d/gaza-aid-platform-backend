@@ -164,6 +164,52 @@
 
 /**
  * @openapi
+ * /api/auth/resend-otp:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Resend an email verification OTP
+ *     description: Returns a generic success response whether or not the email belongs to an unverified account to prevent email enumeration.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: donor@example.com
+ *     responses:
+ *       200:
+ *         description: Generic OTP delivery response. The endpoint does not reveal whether the account exists or is already verified.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiSuccessResponse'
+ *             example:
+ *               success: true
+ *               message: If the account exists and needs verification, a new OTP was sent
+ *               data: { redirectTo: /verify-otp }
+ *         headers:
+ *           RateLimit-Limit:
+ *             description: Maximum requests allowed in the current rate-limit window.
+ *             schema: { type: integer }
+ *           RateLimit-Remaining:
+ *             description: Requests remaining in the current rate-limit window.
+ *             schema: { type: integer }
+ *           RateLimit-Reset:
+ *             description: Unix timestamp when the current rate-limit window resets.
+ *             schema: { type: integer }
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       429:
+ *         description: Too many OTP requests. The endpoint uses the authentication rate limiter, five requests per 15 minutes.
+ */
+
+/**
+ * @openapi
  * /api/auth/forgot-password:
  *   post:
  *     tags: [Auth]
@@ -193,6 +239,7 @@
  *   post:
  *     tags: [Auth]
  *     summary: Reset a donor password using an OTP
+ *     description: On successful reset, all active refresh-token sessions for the user are revoked.
  *     requestBody:
  *       required: true
  *       content:
