@@ -38,12 +38,20 @@ redisClient.on('ready', () => {
   logger.info('Redis client ready');
 });
 
-(async () => {
+const initRedis = async (): Promise<void> => {
   try {
-    if (!redisClient.isOpen) await redisClient.connect();
-  } catch (err) {
-    logger.warn('Redis connection failed; continuing without Redis services', err);
+    if (redisClient.isOpen) {
+      return;
+    }
+
+    await redisClient.connect();
+  } catch (error) {
+    logger.warn('Redis connection failed; application running without cache/rate-limiting.', error);
   }
-})();
+};
+
+void initRedis().catch((error: unknown) => {
+  logger.warn('Redis initialization failed; application running without cache/rate-limiting.', error);
+});
 
 export default redisClient;

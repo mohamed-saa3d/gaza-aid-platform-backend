@@ -6,23 +6,45 @@ import rateLimit, {
 } from 'express-rate-limit';
 import { env } from '../../config/env';
 import { RedisStore } from 'rate-limit-redis';
-import redisClient, { withRedisTimeout } from '../../config/redis.config';
+import redisClient from '../../config/redis.config';
+import logger from '../utils/logger';
 
 class ResilientRedisStore implements Store {
   private readonly redisStore: Store = new RedisStore({
-    sendCommand: (...args: string[]) => withRedisTimeout(redisClient.sendCommand(args)),
+    sendCommand: async (...args: string[]) => {
+      if (!redisClient.isReady) {
+        throw new Error('Redis is unavailable');
+      }
+
+      return redisClient.sendCommand(args);
+    },
   });
 
   private readonly memoryStore = new MemoryStore();
 
   init(options: Options): void {
-    this.redisStore.init?.(options);
     this.memoryStore.init(options);
+
+    if (!redisClient.isReady) {
+      return;
+    }
+
+    try {
+      const initialization = this.redisStore.init?.(options) as unknown;
+
+      if (initialization instanceof Promise) {
+        initialization.catch((error: unknown) => {
+          logger.warn('Redis rate-limit store initialization failed; using memory fallback', error);
+        });
+      }
+    } catch (error) {
+      logger.warn('Redis rate-limit store initialization failed; using memory fallback', error);
+    }
   }
 
   async increment(key: string): Promise<IncrementResponse> {
     try {
-      if (!redisClient.isOpen) {
+      if (!redisClient.isReady) {
         return this.memoryStore.increment(key);
       }
 
@@ -34,7 +56,7 @@ class ResilientRedisStore implements Store {
 
   async decrement(key: string): Promise<void> {
     try {
-      if (redisClient.isOpen) {
+      if (redisClient.isReady) {
         await this.redisStore.decrement?.(key);
       }
     } catch {
@@ -44,7 +66,7 @@ class ResilientRedisStore implements Store {
 
   async resetKey(key: string): Promise<void> {
     try {
-      if (redisClient.isOpen) {
+      if (redisClient.isReady) {
         await this.redisStore.resetKey?.(key);
       }
     } catch {
