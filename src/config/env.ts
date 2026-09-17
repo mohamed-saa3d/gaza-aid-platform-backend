@@ -24,7 +24,7 @@ const getRequired = (key: string): string => {
 export const env = {
   NODE_ENV: process.env.NODE_ENV ?? 'development',
   PORT: toNumber(process.env.PORT, 3000),
-  API_PREFIX: process.env.API_PREFIX ?? '/api',
+  API_PREFIX: process.env.API_PREFIX ?? '/api/v1',
   DATABASE_URL: process.env.DATABASE_URL,
   JWT_SECRET: getRequired('JWT_SECRET'),
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN ?? '15m',

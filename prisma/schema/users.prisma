@@ -17,4 +17,6 @@ model User {
   refreshSessions RefreshSession[]
   wallet         Wallet?
   paymentIntents PaymentIntent[]
+
+  @@index([role])
 }

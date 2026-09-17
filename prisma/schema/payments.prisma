@@ -9,4 +9,8 @@ model PaymentIntent {
   referenceId String?
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
 }

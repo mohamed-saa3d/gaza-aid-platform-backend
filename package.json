@@ -3,6 +3,10 @@
     "schema": "prisma/schema",
     "seed": "tsx prisma/seed.ts"
   },
+  "engines": {
+    "node": "20.x",
+    "npm": "10.x"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "concurrently \"tsx watch src/server.ts\"",
