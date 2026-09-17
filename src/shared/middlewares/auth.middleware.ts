@@ -25,17 +25,21 @@ const getBearerToken = (authorizationHeader?: string): string | null => {
   return token;
 };
 
+const getAccessToken = (req: Request): string | null => {
+  return getBearerToken(req.headers.authorization) ?? req.cookies?.accessToken ?? null;
+};
+
 export const authenticateUser = (
   req: Request,
   res: Response,
   next: NextFunction,
 ): void => {
-  const token = getBearerToken(req.headers.authorization);
+  const token = getAccessToken(req);
 
   if (!token) {
     res.status(401).json({
       success: false,
-      message: 'Authentication token is required',
+      message: 'Unauthorized',
     });
     return;
   }
@@ -47,7 +51,7 @@ export const authenticateUser = (
   } catch {
     res.status(401).json({
       success: false,
-      message: 'Invalid or expired authentication token',
+      message: 'Unauthorized',
     });
     return;
   }
