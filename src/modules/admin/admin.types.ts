@@ -9,6 +9,8 @@ export type CreateAdminInput = {
 
 export type UpdateAdminInput = {
   id: string;
+  actorId: string;
+  actorEmail?: string;
   name?: string;
   role?: AdminRole;
 };

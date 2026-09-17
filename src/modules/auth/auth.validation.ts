@@ -23,6 +23,12 @@ export const verifyEmailSchema = z.object({
   }),
 });
 
+export const resendOtpSchema = z.object({
+  body: z.object({
+    email: z.email('Invalid email address').trim().toLowerCase(),
+  }),
+});
+
 export const forgotPasswordSchema = z.object({
   body: z.object({
     email: z.email('Invalid email address').trim().toLowerCase(),

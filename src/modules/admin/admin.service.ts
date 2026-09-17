@@ -79,14 +79,14 @@ export const adminService = {
       throw new AppError('Invalid email or password', 401);
     }
 
+    if (admin.deletedAt || admin.isActive === false) {
+      throw new AppError('Admin account is inactive', 403);
+    }
+
     const isPasswordValid = await bcrypt.compare(input.password, admin.passwordHash);
 
     if (!isPasswordValid) {
       throw new AppError('Invalid email or password', 401);
-    }
-
-    if ('isActive' in admin && (admin as any).isActive === false) {
-      throw new AppError('Admin account is inactive', 403);
     }
 
     return {
@@ -125,6 +125,23 @@ export const adminService = {
   },
 
   async updateAdmin(input: UpdateAdminInput) {
+    const target = await prisma.admin.findUnique({
+      where: { id: input.id },
+      select: { id: true, email: true, deletedAt: true },
+    });
+
+    if (!target || target.deletedAt) {
+      throw new AppError('Admin was not found', 404);
+    }
+
+    if (target.id === input.actorId) {
+      throw new AppError('Administrators cannot modify their own account', 403);
+    }
+
+    if (target.email.toLowerCase() === process.env.ADMIN_EMAIL?.trim().toLowerCase()) {
+      throw new AppError('The primary root admin cannot be modified', 403);
+    }
+
     try {
       return await prisma.admin.update({
         where: { id: input.id },
@@ -143,14 +160,26 @@ export const adminService = {
     }
   },
 
-  async deleteAdmin(id: string) {
+  async deleteAdmin(id: string, actorId: string, _actorEmail?: string) {
     const admin = await prisma.admin.findUnique({
       where: { id },
-      select: { id: true, deletedAt: true },
+      select: { id: true, email: true, deletedAt: true },
     });
 
     if (!admin) {
       throw new AppError('Admin was not found', 404);
+    }
+
+    if (admin.deletedAt) {
+      throw new AppError('Admin was not found', 404);
+    }
+
+    if (admin.id === actorId) {
+      throw new AppError('Administrators cannot delete their own account', 403);
+    }
+
+    if (admin.email.toLowerCase() === process.env.ADMIN_EMAIL?.trim().toLowerCase()) {
+      throw new AppError('The primary root admin cannot be deleted', 403);
     }
 
     const activeAdminCount = await prisma.admin.count({

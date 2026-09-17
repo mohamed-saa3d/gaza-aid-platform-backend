@@ -80,6 +80,41 @@ export const authService = {
     }
   },
 
+  async resendVerificationOtp(email: string) {
+    const normalizedEmail = normalizeEmail(email);
+    const user = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      select: { id: true, isEmailVerified: true },
+    });
+
+    if (!user || user.isEmailVerified) {
+      return {
+        message: 'If the account exists and needs verification, a new OTP was sent',
+        redirectTo: '/verify-otp',
+      };
+    }
+
+    const otp = generateOTP();
+    const otpHash = hashToken(otp);
+    const verificationExpires = new Date(Date.now() + 15 * 60 * 1000);
+
+    await prisma.authToken.create({
+      data: {
+        token: otpHash,
+        type: 'EMAIL_VERIFICATION',
+        expiresAt: verificationExpires,
+        user: { connect: { id: user.id } },
+      },
+    });
+
+    await emailService.sendVerificationEmail(normalizedEmail, otp);
+
+    return {
+      message: 'OTP sent successfully to your email',
+      redirectTo: '/verify-otp',
+    };
+  },
+
   async login(input: LoginInput) {
     const user = await prisma.user.findUnique({
       where: { email: normalizeEmail(input.email) },
@@ -325,6 +360,10 @@ export const authService = {
         select: userSelect,
       }),
       prisma.authToken.delete({ where: { id: authToken.id } }),
+      prisma.refreshSession.updateMany({
+        where: { userId: authToken.userId },
+        data: { revokedAt: new Date() },
+      }),
     ]);
 
     return user;

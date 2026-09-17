@@ -47,20 +47,13 @@ export const getAdminProfile: RequestHandler = async (req, res, next) => {
 export const createAdmin: RequestHandler = async (req, res, next) => {
   try {
     const { name, email, password, role, rootEmail, rootPassword } = req.body as {
-      name?: string;
-      email?: string;
-      password?: string;
+      name: string;
+      email: string;
+      password: string;
       role?: AdminRole;
-      rootEmail?: string;
-      rootPassword?: string;
+      rootEmail: string;
+      rootPassword: string;
     };
-
-    if (!name || !email || !password || !rootEmail || !rootPassword) {
-      throw new AppError(
-        'Name, email, password, rootEmail, and rootPassword are required',
-        400,
-      );
-    }
 
     if (!req.user?.id || !req.user?.email) {
       throw new AppError('Authentication token is required', 401);
@@ -122,15 +115,13 @@ export const updateAdmin: RequestHandler = async (req, res, next) => {
       throw new AppError('Invalid admin ID', 400);
     }
 
-    if (!name && !role) {
-      throw new AppError('At least one field is required to update the admin', 400);
-    }
-
-    if (role && !Object.values(AdminRole).includes(role)) {
-      throw new AppError('Invalid admin role', 400);
-    }
-
-    const admin = await adminService.updateAdmin({ id, name, role });
+    const admin = await adminService.updateAdmin({
+      id,
+      actorId: req.user!.id,
+      actorEmail: req.user!.email,
+      name,
+      role,
+    });
 
     res.status(200).json({
       success: true,
@@ -154,7 +145,7 @@ export const deleteAdmin: RequestHandler = async (req, res, next) => {
       throw new AppError('Invalid admin ID', 400);
     }
 
-    await adminService.deleteAdmin(id);
+    await adminService.deleteAdmin(id, req.user!.id, req.user!.email);
 
     res.status(200).json({
       success: true,

@@ -3,6 +3,7 @@ enum Role {
 }
 
 enum AdminRole {
+  SUPER_ADMIN
   ADMIN
 }
 

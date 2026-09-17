@@ -9,6 +9,7 @@ import {
   logout,
   refreshToken,
   register,
+  resendOtp,
   resetPassword,
   verifyEmail,
 } from './auth.controller';
@@ -17,6 +18,7 @@ import {
   forgotPasswordSchema,
   loginSchema,
   registerSchema,
+  resendOtpSchema,
   resetPasswordSchema,
   refreshTokenSchema,
   verifyEmailSchema,
@@ -29,6 +31,7 @@ authRoutes.post('/login', loginLimiter, validateRequest(loginSchema), login);
 authRoutes.post('/refresh', validateRequest(refreshTokenSchema), refreshToken);
 authRoutes.post('/logout', logout);
 authRoutes.post('/verify-email', otpLimiter, validateRequest(verifyEmailSchema), verifyEmail);
+authRoutes.post('/resend-otp', otpLimiter, validateRequest(resendOtpSchema), resendOtp);
 authRoutes.post('/forgot-password', otpLimiter, validateRequest(forgotPasswordSchema), forgotPassword);
 authRoutes.post('/reset-password', otpLimiter, validateRequest(resetPasswordSchema), resetPassword);
 authRoutes.post('/change-password', requireAuth, validateRequest(changePasswordSchema), changePassword);

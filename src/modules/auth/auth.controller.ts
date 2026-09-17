@@ -61,6 +61,20 @@ export const verifyEmail: RequestHandler = async (req, res, next) => {
   }
 };
 
+export const resendOtp: RequestHandler = async (req, res, next) => {
+  try {
+    const { message, redirectTo } = await authService.resendVerificationOtp(req.body.email);
+
+    res.status(200).json({
+      success: true,
+      message,
+      data: { redirectTo },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const forgotPassword: RequestHandler = async (req, res, next) => {
   try {
     const { message, redirectTo } = await authService.forgotPassword(req.body.email);
