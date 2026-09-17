@@ -6,11 +6,11 @@ import rateLimit, {
 } from 'express-rate-limit';
 import { env } from '../../config/env';
 import { RedisStore } from 'rate-limit-redis';
-import redisClient from '../../config/redis.config';
+import redisClient, { withRedisTimeout } from '../../config/redis.config';
 
 class ResilientRedisStore implements Store {
   private readonly redisStore: Store = new RedisStore({
-    sendCommand: (...args: string[]) => redisClient.sendCommand(args),
+    sendCommand: (...args: string[]) => withRedisTimeout(redisClient.sendCommand(args)),
   });
 
   private readonly memoryStore = new MemoryStore();

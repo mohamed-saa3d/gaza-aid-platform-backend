@@ -1,5 +1,5 @@
 import type { RequestHandler } from 'express';
-import redisClient from '../../config/redis.config';
+import redisClient, { withRedisTimeout } from '../../config/redis.config';
 import logger from '../utils/logger';
 
 const inFlightRequests = new Map<string, Promise<void>>();
@@ -13,7 +13,7 @@ export const useCache = (prefix: string, ttlSeconds: number): RequestHandler => 
         return next();
       }
 
-      const cached = await redisClient.get(key);
+      const cached = await withRedisTimeout(redisClient.get(key));
 
       if (cached) {
         const body = JSON.parse(cached);
@@ -25,7 +25,7 @@ export const useCache = (prefix: string, ttlSeconds: number): RequestHandler => 
 
       if (inFlight) {
         await inFlight;
-        const coalescedCached = await redisClient.get(key);
+        const coalescedCached = await withRedisTimeout(redisClient.get(key));
 
         if (coalescedCached) {
           res.status(200).json(JSON.parse(coalescedCached));
