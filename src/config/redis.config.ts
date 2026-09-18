@@ -38,6 +38,38 @@ redisClient.on('ready', () => {
   logger.info('Redis client ready');
 });
 
+let rateLimitKeysFlushed = false;
+
+const flushDevelopmentRateLimitKeys = async (): Promise<void> => {
+  if (process.env.NODE_ENV !== 'development' || rateLimitKeysFlushed) {
+    return;
+  }
+
+  rateLimitKeysFlushed = true;
+  const keys: string[] = [];
+
+  for await (const key of redisClient.scanIterator({ MATCH: 'rl:*', COUNT: 100 })) {
+    if (Array.isArray(key)) {
+      keys.push(...key);
+    } else {
+      keys.push(key);
+    }
+  }
+
+  if (keys.length > 0) {
+    await redisClient.del(keys);
+  }
+
+  console.info(`[Dev Setup] Cleared ${keys.length} Redis rate limit keys on startup.`);
+};
+
+redisClient.on('ready', () => {
+  void flushDevelopmentRateLimitKeys().catch((error: unknown) => {
+    rateLimitKeysFlushed = false;
+    logger.warn('Failed to clear development Redis rate limit keys.', error);
+  });
+});
+
 const initRedis = async (): Promise<void> => {
   try {
     if (redisClient.isOpen) {

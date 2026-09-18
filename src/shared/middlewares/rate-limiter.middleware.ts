@@ -1,4 +1,5 @@
 import rateLimit, {
+  ipKeyGenerator,
   MemoryStore,
   type IncrementResponse,
   type Options,
@@ -75,52 +76,83 @@ class ResilientRedisStore implements Store {
   }
 }
 
-export const globalRateLimiter = rateLimit({
+const developmentMultiplier = process.env.NODE_ENV === 'development' ? 10 : 1;
+
+const createLimiter = ({
+  group,
+  windowMs,
+  max,
+  message,
+  useRedis = true,
+}: {
+  group: string;
+  windowMs: number;
+  max: number;
+  message: string;
+  useRedis?: boolean;
+}) =>
+  rateLimit({
+    windowMs,
+    max: max * developmentMultiplier,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (request) => {
+      const clientIp = ipKeyGenerator(request.ip ?? 'unknown');
+      return `${group}:${request.baseUrl}${request.path}:${clientIp}`;
+    },
+    message: {
+      success: false,
+      message,
+    },
+    ...(useRedis ? { store: new ResilientRedisStore() } : {}),
+  });
+
+export const globalRateLimiter = createLimiter({
+  group: 'global',
   windowMs: env.RATE_LIMIT_WINDOW_MS,
   max: env.RATE_LIMIT_MAX_REQUESTS,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    success: false,
-    message: 'Too many requests, please try again later.',
-  },
-  store: new ResilientRedisStore(),
+  message: 'Too many requests, please try again later.',
 });
 
-export const authRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+export const loginLimiter = createLimiter({
+  group: 'login',
+  windowMs: 3 * 60 * 1000,
+  max: 15,
+  message: 'Too many login attempts, please try again later.',
+});
+
+export const registerLimiter = createLimiter({
+  group: 'register',
+  windowMs: 3 * 60 * 1000,
+  max: 15,
+  message: 'Too many registration attempts, please try again later.',
+});
+
+export const otpLimiter = createLimiter({
+  group: 'otp',
+  windowMs: 2 * 60 * 1000,
   max: 5,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    success: false,
-    message: 'Too many login attempts, please try again after 15 minutes.',
-  },
-  store: new ResilientRedisStore(),
+  message: 'Too many OTP attempts, please try again later.',
 });
 
-export const sensitiveOpsLimiter = rateLimit({
+export const generalAuthLimiter = createLimiter({
+  group: 'general-auth',
+  windowMs: 60 * 1000,
+  max: 100,
+  message: 'Too many authentication requests, please try again later.',
+});
+
+export const sensitiveOpsLimiter = createLimiter({
+  group: 'sensitive',
   windowMs: 60 * 1000,
   max: 5,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    success: false,
-    message: 'Action limit reached. Please slow down.',
-  },
+  message: 'Action limit reached. Please slow down.',
+  useRedis: false,
 });
 
-export const createAdminLimiter = rateLimit({
+export const createAdminLimiter = createLimiter({
+  group: 'admin-create',
   windowMs: 15 * 60 * 1000,
   max: 5,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    success: false,
-    message: 'Too many admin creation attempts from this IP, please try again after 15 minutes.',
-  },
-  store: new ResilientRedisStore(),
+  message: 'Too many admin creation attempts from this IP, please try again after 15 minutes.',
 });
-
-export const loginLimiter = authRateLimiter;
-export const otpLimiter = authRateLimiter;

@@ -115,4 +115,8 @@ app.use(`${env.API_PREFIX}/subscribers`, subscriberRoutes);
 app.use(`${env.API_PREFIX}/ratings`, ratingsRoutes);
 app.use(`${env.API_PREFIX}/settings`, settingsRoutes);
 
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: `Route ${req.originalUrl} not found` });
+});
+
 app.use(errorMiddleware);
