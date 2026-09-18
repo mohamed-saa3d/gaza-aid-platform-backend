@@ -110,6 +110,20 @@ export const authService = {
       };
     }
 
+    const cooldownSince = new Date(Date.now() - 60 * 1000);
+    const recentToken = await prisma.authToken.findFirst({
+      where: {
+        userId: user.id,
+        type: 'EMAIL_VERIFICATION',
+        createdAt: { gt: cooldownSince },
+      },
+      select: { id: true },
+    });
+
+    if (recentToken) {
+      throw new AppError('يرجى الانتظار دقيقة واحدة قبل طلب رمز جديد', 429);
+    }
+
     const otp = generateOTP();
     const otpHash = hashToken(otp);
     const verificationExpires = new Date(Date.now() + 15 * 60 * 1000);

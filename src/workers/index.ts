@@ -15,7 +15,21 @@ const emailWorker = new Worker<EmailJobData>(
       return;
     }
 
-    await transport.sendMail(job.data);
+    try {
+      await transport.sendMail(job.data);
+    } catch (error: unknown) {
+      const code = (error as { code?: string }).code;
+
+      if (code === 'EAUTH') {
+        console.error('[EmailService] SMTP authentication failed (EAUTH).', error);
+      } else if (code === 'ESOCKET') {
+        console.error('[EmailService] SMTP connection dropped (ESOCKET).', error);
+      } else {
+        console.error('[EmailService] SMTP delivery failed.', error);
+      }
+
+      throw error;
+    }
   },
   { connection: bullmqConnection, concurrency: 10 },
 );

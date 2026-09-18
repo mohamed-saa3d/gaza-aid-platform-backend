@@ -24,13 +24,15 @@ export const smtpConfigured =
 
 export const transport = smtpConfigured
   ? nodemailer.createTransport({
-      host: env.SMTP_HOST,
-      port: env.SMTP_PORT,
-      secure: env.SMTP_PORT === 465,
+      host: env.SMTP_HOST || 'smtp.gmail.com',
+      port: Number(process.env.SMTP_PORT) || 587,
+      secure: process.env.SMTP_SECURE === 'true',
       auth: {
         user: env.SMTP_USER,
         pass: env.SMTP_PASS,
       },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
     })
   : null;
 
