@@ -28,7 +28,17 @@ app.set('trust proxy', 1);
 app.use(helmet());
 const browserCors = cors({
   origin(origin, callback) {
-    if (origin && env.ALLOWED_ORIGINS.includes(origin)) {
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+
+    if (
+      env.ALLOWED_ORIGINS.includes(origin) ||
+      env.NODE_ENV === 'development' ||
+      origin.startsWith('http://localhost:') ||
+      origin.startsWith('http://127.0.0.1:')  
+    ) {
       callback(null, true);
       return;
     }

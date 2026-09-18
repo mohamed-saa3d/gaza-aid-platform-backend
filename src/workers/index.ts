@@ -1,5 +1,5 @@
 import { Job, Worker } from 'bullmq';
-import { smtpConfigured, transport } from '../shared/services/email/email.transporter';
+import { resend, resendConfigured } from '../shared/services/email/email.transporter';
 import { prisma } from '../shared/database/prisma';
 import { bullmqConnection } from '../queues/redis.connection';
 import type { EmailJobData } from '../queues/email.queue';
@@ -8,7 +8,7 @@ import type { BroadcastJobData } from '../queues/broadcast.queue';
 const emailWorker = new Worker<EmailJobData>(
   'email',
   async (job: Job<EmailJobData>) => {
-    if (!smtpConfigured || !transport) {
+    if (!resendConfigured) {
       console.log(
         `[Mock Email] Sent to ${job.data.to} (Subject: ${job.data.subject}) - Content hidden for security.`,
       );
@@ -16,18 +16,18 @@ const emailWorker = new Worker<EmailJobData>(
     }
 
     try {
-      await transport.sendMail(job.data);
-    } catch (error: unknown) {
-      const code = (error as { code?: string }).code;
+      const { error } = await resend.emails.send({
+        from: job.data.from || process.env.EMAIL_FROM || 'onboarding@resend.dev',
+        to: [job.data.to],
+        subject: job.data.subject,
+        html: job.data.html,
+      });
 
-      if (code === 'EAUTH') {
-        console.error('[EmailService] SMTP authentication failed (EAUTH).', error);
-      } else if (code === 'ESOCKET') {
-        console.error('[EmailService] SMTP connection dropped (ESOCKET).', error);
-      } else {
-        console.error('[EmailService] SMTP delivery failed.', error);
+      if (error) {
+        throw error;
       }
-
+    } catch (error: unknown) {
+      console.error('[EmailService] Resend delivery failed.', error);
       throw error;
     }
   },

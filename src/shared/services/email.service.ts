@@ -8,7 +8,7 @@ import { emailQueue } from '../../queues/email.queue';
 export const emailService = {
   async sendVerificationEmail(to: string, otp: string) {
     const message = {
-      from: env.FROM_EMAIL,
+      from: env.EMAIL_FROM,
       to,
       subject: 'Your Qaza verification OTP',
       html: renderVerificationHtml(otp),
@@ -19,7 +19,7 @@ export const emailService = {
 
   async sendPasswordResetEmail(to: string, otp: string) {
     const message = {
-      from: env.FROM_EMAIL,
+      from: env.EMAIL_FROM,
       to,
       subject: 'Your Qaza password reset OTP',
       html: renderPasswordResetHtml(otp),
