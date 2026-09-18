@@ -72,35 +72,6 @@ export const adminService = {
 
   async login(input: AdminLoginInput) {
     const normalizedEmail = normalizeEmail(input.email);
-    const configuredAdminEmail = normalizeEmail(process.env.ADMIN_EMAIL ?? '');
-    const configuredAdminPassword = process.env.ADMIN_PASSWORD;
-
-    if (
-      configuredAdminPassword &&
-      normalizedEmail === configuredAdminEmail &&
-      input.password === configuredAdminPassword
-    ) {
-      return {
-        accessToken: signToken({
-          id: 'env-admin',
-          role: 'ADMIN',
-          email: normalizedEmail,
-          isAdmin: true,
-        }),
-        refreshToken: signRefreshToken({
-          id: 'env-admin',
-          role: 'ADMIN',
-          email: normalizedEmail,
-          isAdmin: true,
-        }),
-        admin: {
-          id: 'env-admin',
-          name: 'Environment Admin',
-          email: normalizedEmail,
-          role: AdminRole.SUPER_ADMIN,
-        },
-      };
-    }
 
     const admin = await prisma.admin.findUnique({
       where: { email: normalizedEmail },
