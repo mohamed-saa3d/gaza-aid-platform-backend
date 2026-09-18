@@ -14,10 +14,18 @@ export const errorMiddleware: ErrorRequestHandler = (error, _req, res, _next) =>
   }
 
   if (error instanceof ZodError) {
+    const issues = error.issues.filter(
+      (issue, index, allIssues) =>
+        allIssues.findIndex(
+          (candidate) =>
+            candidate.path.join('.') === issue.path.join('.') && candidate.message === issue.message,
+        ) === index,
+    );
+
     res.status(400).json({
       success: false,
       message: 'Validation failed',
-      errors: error.issues,
+      errors: issues,
     });
     return;
   }

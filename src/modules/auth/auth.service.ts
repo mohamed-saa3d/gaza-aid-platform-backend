@@ -6,14 +6,17 @@ import { AppError } from '../../shared/errors/app-error';
 import { isPrismaKnownRequestError } from '../../shared/utils/prisma-error';
 import { signRefreshToken, signToken, verifyRefreshToken } from '../../shared/utils/jwt';
 import { emailService } from '../../shared/services/email.service';
+import redisClient, { isRedisReady } from '../../config/redis.config';
 import { userSelect } from './auth.constants';
-import type { LoginInput, RegisterInput } from './auth.types';
+import type { LoginInput, PendingRegistration, RegisterInput } from './auth.types';
 
 const hashToken = (token: string) => crypto.createHash('sha256').update(token).digest('hex');
 const normalizeEmail = (email: string): string => email.trim().toLowerCase();
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const VERIFICATION_EMAIL_TIMEOUT_MS = 5000;
+const REGISTRATION_TTL_SECONDS = 15 * 60;
+const registrationKey = (email: string): string => `reg:${normalizeEmail(email)}`;
 
 const sendVerificationEmailNonBlocking = (email: string, otp: string): void => {
   void (async () => {
@@ -59,45 +62,72 @@ export const authService = {
       throw new AppError('A user with this email already exists', 409);
     }
 
-    const passwordHash = await bcrypt.hash(input.password, 12);
     const otp = generateOTP();
     const otpHash = hashToken(otp);
-    const verificationExpires = new Date(Date.now() + 15 * 60 * 1000);
+    const pendingRegistration: PendingRegistration = {
+      name: input.name.trim(),
+      email,
+      password: input.password,
+      image: input.image,
+      otpHash,
+      createdAt: Date.now(),
+    };
 
     try {
-      await prisma.user.create({
-        data: {
-          name: input.name.trim(),
-          email,
-          password: passwordHash,
-          avatar: input.image,
-          role: Role.DONOR,
-          tokens: {
-            create: {
-              token: otpHash,
-              type: 'EMAIL_VERIFICATION',
-              expiresAt: verificationExpires,
-            },
-          },
-        },
-      });
+      if (!isRedisReady()) {
+        throw new AppError('Registration service is temporarily unavailable', 503);
+      }
+
+      await redisClient.setEx(
+        registrationKey(email),
+        REGISTRATION_TTL_SECONDS,
+        JSON.stringify(pendingRegistration),
+      );
 
       sendVerificationEmailNonBlocking(email, otp);
       return {
-        message: 'OTP sent successfully to your email',
+        message: 'تم إرسال رمز التحقق، يرجى تأكيد البريد لإنشاء الحساب',
         redirectTo: '/verify-otp',
       };
     } catch (error) {
-      if (isPrismaKnownRequestError(error, 'P2002')) {
-        throw new AppError('A user with this email already exists', 409);
-      }
-
       throw error;
     }
   },
 
   async resendVerificationOtp(email: string) {
     const normalizedEmail = normalizeEmail(email);
+    const pendingKey = registrationKey(normalizedEmail);
+
+    if (isRedisReady()) {
+      const pendingValue = await redisClient.get(pendingKey);
+
+      if (pendingValue) {
+        const pending = JSON.parse(pendingValue) as PendingRegistration;
+        if (pending.createdAt > Date.now() - 60 * 1000) {
+          throw new AppError('يرجى الانتظار دقيقة واحدة قبل طلب رمز جديد', 429);
+        }
+
+        const otp = generateOTP();
+        const updatedPending: PendingRegistration = {
+          ...pending,
+          otpHash: hashToken(otp),
+          createdAt: Date.now(),
+        };
+
+        await redisClient.setEx(
+          pendingKey,
+          REGISTRATION_TTL_SECONDS,
+          JSON.stringify(updatedPending),
+        );
+        sendVerificationEmailNonBlocking(normalizedEmail, otp);
+
+        return {
+          message: 'OTP sent successfully to your email',
+          redirectTo: '/verify-otp',
+        };
+      }
+    }
+
     const user = await prisma.user.findUnique({
       where: { email: normalizedEmail },
       select: { id: true, isEmailVerified: true },
@@ -281,6 +311,49 @@ export const authService = {
 
   async verifyEmail(email: string, otp: string) {
     const normalizedEmail = normalizeEmail(email);
+
+    if (isRedisReady()) {
+      const pendingKey = registrationKey(normalizedEmail);
+      const pendingValue = await redisClient.get(pendingKey);
+
+      if (pendingValue) {
+        const pending = JSON.parse(pendingValue) as PendingRegistration;
+
+        if (pending.createdAt <= Date.now() - REGISTRATION_TTL_SECONDS * 1000) {
+          await redisClient.del(pendingKey);
+          throw new AppError('Invalid or expired email verification token', 400);
+        }
+
+        if (hashToken(otp) !== pending.otpHash) {
+          throw new AppError('Invalid or expired email verification token', 400);
+        }
+
+        try {
+          const passwordHash = await bcrypt.hash(pending.password, 12);
+          const createdUser = await prisma.user.create({
+            data: {
+              name: pending.name,
+              email: pending.email,
+              password: passwordHash,
+              avatar: pending.image,
+              role: Role.DONOR,
+              isEmailVerified: true,
+            },
+            select: userSelect,
+          });
+
+          await redisClient.del(pendingKey);
+          return createdUser;
+        } catch (error) {
+          if (isPrismaKnownRequestError(error, 'P2002')) {
+            throw new AppError('A user with this email already exists', 409);
+          }
+
+          throw error;
+        }
+      }
+    }
+
     const user = await prisma.user.findUnique({
       where: { email: normalizedEmail },
       select: { id: true },

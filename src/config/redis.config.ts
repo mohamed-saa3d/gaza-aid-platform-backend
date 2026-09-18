@@ -12,6 +12,8 @@ export const redisClient = createClient({
   },
 });
 
+export const isRedisReady = (): boolean => redisClient.isReady;
+
 export const withRedisTimeout = async <T>(operation: Promise<T>): Promise<T> => {
   let timeoutHandle: ReturnType<typeof setTimeout>;
 
