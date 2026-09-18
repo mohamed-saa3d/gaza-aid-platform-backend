@@ -176,9 +176,60 @@ export const authService = {
   },
 
   async login(input: LoginInput) {
+    const email = normalizeEmail(input.email);
     const user = await prisma.user.findUnique({
-      where: { email: normalizeEmail(input.email) },
+      where: { email },
     });
+
+    const admin = user
+      ? null
+      : await prisma.admin.findUnique({
+          where: { email },
+        });
+
+    if (!user && !admin) {
+      throw new AppError('Invalid email or password', 401);
+    }
+
+    if (admin) {
+      if (admin.deletedAt || !admin.isActive) {
+        throw new AppError('Admin account is inactive', 403);
+      }
+
+      const isPasswordValid = await bcrypt.compare(input.password, admin.passwordHash);
+
+      if (!isPasswordValid) {
+        throw new AppError('Invalid email or password', 401);
+      }
+
+      const accessToken = signToken({
+        id: admin.id,
+        role: admin.role,
+        email: admin.email,
+        isAdmin: true,
+      });
+      const refreshToken = signRefreshToken({
+        id: admin.id,
+        role: admin.role,
+        email: admin.email,
+        isAdmin: true,
+        sessionId: crypto.randomUUID(),
+      });
+
+      return {
+        accessToken,
+        refreshToken,
+        user: {
+          id: admin.id,
+          name: admin.name,
+          email: admin.email,
+          avatar: null,
+          role: admin.role,
+          createdAt: admin.createdAt,
+          updatedAt: admin.updatedAt,
+        },
+      };
+    }
 
     if (!user) {
       throw new AppError('Invalid email or password', 401);
@@ -197,6 +248,7 @@ export const authService = {
     const accessToken = signToken({
       id: user.id,
       role: user.role,
+      email: user.email,
     });
 
     const refreshToken = await createRefreshSession(user.id, user.role);
