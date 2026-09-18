@@ -36,6 +36,26 @@ export const transport = smtpConfigured
     })
   : null;
 
+export const verifySmtpConnection = async (): Promise<void> => {
+  if (!transport) {
+    console.warn('[EmailService] SMTP verification skipped: SMTP is not configured.');
+    return;
+  }
+
+  try {
+    await transport.verify();
+    console.log('SMTP Connected Successfully');
+  } catch (error: unknown) {
+    const code = (error as { code?: string }).code;
+
+    if (code === 'EAUTH') {
+      console.error('Invalid Credentials: SMTP authentication failed (EAUTH).', error);
+    } else {
+      console.error('[EmailService] SMTP connection verification failed.', error);
+    }
+  }
+};
+
 if (!smtpConfigured) {
   console.warn(
     '[EmailService] SMTP not fully configured. Running in Mock/Console mode for development.',

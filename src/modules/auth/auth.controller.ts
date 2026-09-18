@@ -12,6 +12,7 @@ const getAuthenticatedUserId = (req: Request): string => {
 
 export const register: RequestHandler = async (req, res, next) => {
   try {
+    console.info(`[Auth] Incoming register request from ${req.ip}`);
     const { message, redirectTo } = await authService.register(req.body);
 
     res.status(201).json({
@@ -63,6 +64,7 @@ export const verifyEmail: RequestHandler = async (req, res, next) => {
 
 export const resendOtp: RequestHandler = async (req, res, next) => {
   try {
+    console.info(`[Auth] Incoming resend-otp request from ${req.ip}`);
     const { message, redirectTo } = await authService.resendVerificationOtp(req.body.email);
 
     res.status(200).json({
