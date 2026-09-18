@@ -70,7 +70,14 @@ app.use(
 );
 app.use(cookieParser());
 app.use(requestLoggerMiddleware);
-app.use(globalRateLimiter);
+app.use((req, res, next) => {
+  if (req.path.startsWith(`${env.API_PREFIX}/auth`)) {
+    next();
+    return;
+  }
+
+  globalRateLimiter(req, res, next);
+});
 
 app.get('/health', (_req, res) => {
   res.status(200).json({ success: true, message: 'Backend is healthy' });
