@@ -2,6 +2,14 @@ import type { Request, RequestHandler } from 'express';
 import { AppError } from '../../shared/errors/app-error';
 import { authService } from './auth.service';
 
+const cookieOptions = {
+  httpOnly: true,
+  path: '/',
+  sameSite: (process.env.NODE_ENV === 'production' ? 'none' : 'lax') as 'none' | 'lax',
+  secure: process.env.NODE_ENV === 'production',
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+};
+
 const getAuthenticatedUserId = (req: Request): string => {
   if (!req.user?.id) {
     throw new AppError('Authentication is required', 401);
@@ -29,12 +37,7 @@ export const login: RequestHandler = async (req, res, next) => {
   try {
     const { accessToken, refreshToken, user } = await authService.login(req.body);
 
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie('refreshToken', refreshToken, cookieOptions);
 
     res.status(200).json({
       success: true,
@@ -94,21 +97,22 @@ export const forgotPassword: RequestHandler = async (req, res, next) => {
 
 export const refreshToken: RequestHandler = async (req, res, next) => {
   try {
-    const refreshToken = req.cookies?.refreshToken;
+    console.log('Incoming Refresh Request Cookies:', req.cookies);
+    console.log('Incoming Refresh Request Authorization Header:', req.headers.authorization);
 
-    if (!refreshToken) {
-      throw new AppError('Refresh token cookie is missing', 401);
+    const authHeader = req.headers.authorization;
+    const refreshTokenFromCookie = req.cookies?.refreshToken;
+    const refreshTokenValue = refreshTokenFromCookie ??
+      (typeof authHeader === 'string' && authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : undefined);
+
+    if (!refreshTokenValue) {
+      throw new AppError('Refresh token is missing', 401);
     }
 
     const { accessToken, refreshToken: rotatedRefreshToken } =
-      await authService.refreshAccessToken(refreshToken);
+      await authService.refreshAccessToken(refreshTokenValue);
 
-    res.cookie('refreshToken', rotatedRefreshToken, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie('refreshToken', rotatedRefreshToken, cookieOptions);
 
     res.status(200).json({
       success: true,
@@ -128,8 +132,17 @@ export const logout: RequestHandler = async (req, res, next) => {
       await authService.revokeRefreshToken(refreshToken);
     }
 
-    res.clearCookie('refreshToken');
-    res.status(204).send();
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      path: '/',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Logged out successfully',
+    });
   } catch (error) {
     next(error);
   }

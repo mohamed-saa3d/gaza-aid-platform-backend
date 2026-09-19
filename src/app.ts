@@ -25,6 +25,14 @@ import { errorMiddleware } from './shared/errors/error.middleware';
 
 export const app = express();
 
+const allowedOrigins = Array.from(
+  new Set([
+    ...env.ALLOWED_ORIGINS,
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+  ]),
+);
+
 app.set('trust proxy', 1);
 app.use(helmet());
 const browserCors = cors({
@@ -34,12 +42,7 @@ const browserCors = cors({
       return;
     }
 
-    if (
-      env.ALLOWED_ORIGINS.includes(origin) ||
-      env.NODE_ENV === 'development' ||
-      origin.startsWith('http://localhost:') ||
-      origin.startsWith('http://127.0.0.1:')  
-    ) {
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
       return;
     }
@@ -118,6 +121,7 @@ app.use(`${env.API_PREFIX}/ratings`, ratingsRoutes);
 app.use(`${env.API_PREFIX}/settings`, settingsRoutes);
 
 app.use((req, res) => {
+  console.warn(`[404] Frontend tried to reach: ${req.method} ${req.originalUrl}`);
   res.status(404).json({ success: false, message: `Route ${req.originalUrl} not found` });
 });
 

@@ -1,5 +1,6 @@
 import type { Request, RequestHandler } from 'express';
 import { AppError } from '../../shared/errors/app-error';
+import { cloudinaryService } from '../../shared/services/cloudinary.service';
 import { usersService } from './users.service';
 import type { ChangePasswordInput, UpdateProfileInput } from './users.types';
 
@@ -28,15 +29,36 @@ export const getProfile: RequestHandler = async (req, res, next) => {
 export const updateProfile: RequestHandler = async (req, res, next) => {
   try {
     const payload = req.body as Omit<UpdateProfileInput, 'userId'>;
-    
+
     const user = await usersService.updateProfile({
-      ...payload, // 2. نفرد الداتا اللي جاية من الـ body الأول
-      userId: getAuthenticatedUserId(req), // 3. نجبره يستخدم الـ ID بتاع التوكن في الآخر (عشان لو فيه أي تلاعب يتمسح)
+      ...payload,
+      userId: getAuthenticatedUserId(req),
     });
 
     res.status(200).json({
       success: true,
       message: 'User profile updated successfully',
+      data: user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateUserAvatar: RequestHandler = async (req, res, next) => {
+  try {
+    const userId = getAuthenticatedUserId(req);
+
+    if (!req.file || !req.file.buffer) {
+      throw new AppError('Avatar image is required', 400);
+    }
+
+    const uploadResult = await cloudinaryService.uploadImageStream(req.file.buffer, 'qaza/users');
+    const user = await usersService.updateAvatar(userId, uploadResult.secure_url);
+
+    res.status(200).json({
+      success: true,
+      message: 'Avatar updated successfully',
       data: user,
     });
   } catch (error) {

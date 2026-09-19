@@ -44,6 +44,22 @@ export const usersService = {
     }
   },
 
+  async updateAvatar(userId: string, avatarUrl: string) {
+    const updateResult = await prisma.user.updateMany({
+      where: { id: userId, deletedAt: null },
+      data: { avatar: avatarUrl },
+    });
+
+    if (updateResult.count === 0) {
+      throw new AppError('User was not found', 404);
+    }
+
+    return prisma.user.findUnique({
+      where: { id: userId },
+      select: userSelect,
+    });
+  },
+
   async changePassword(input: ChangePasswordInput) {
     const user = await prisma.user.findFirst({
       where: { id: input.userId, deletedAt: null },
