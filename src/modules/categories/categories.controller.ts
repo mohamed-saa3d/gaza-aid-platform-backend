@@ -58,6 +58,7 @@ export const getCategoryById = getCategory;
 export const createCategory: RequestHandler = async (req, res, next) => {
   try {
     const category = await categoriesService.createCategory(req.body as CreateCategoryInput);
+    await redisService.clearCache('categories');
     await invalidateCategoriesCache();
 
     res.status(201).json({
@@ -76,6 +77,7 @@ export const updateCategory: RequestHandler = async (req, res, next) => {
       req.params.id as string,
       req.body as UpdateCategoryInput,
     );
+    await redisService.clearCache('categories');
     await invalidateCategoriesCache();
 
     res.status(200).json({
@@ -91,6 +93,7 @@ export const updateCategory: RequestHandler = async (req, res, next) => {
 export const deleteCategory: RequestHandler = async (req, res, next) => {
   try {
     await categoriesService.deleteCategory(req.params.id as string);
+    await redisService.clearCache('categories');
     await invalidateCategoriesCache();
 
     res.status(200).json({

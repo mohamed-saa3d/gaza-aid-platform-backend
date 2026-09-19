@@ -99,6 +99,8 @@ export const projectsService = {
       throw new AppError('Category was not found', 404);
     }
 
+    const projectStatus = sanitizedInput.status ?? ProjectStatus.ACTIVE;
+
     const project = await prisma.project.create({
       data: {
         titleAr: sanitizedInput.titleAr.trim(),
@@ -109,7 +111,7 @@ export const projectsService = {
         imgPublicId: sanitizedInput.imgPublicId,
         targetAmount: sanitizedInput.targetAmount,
         beneficiariesCount: sanitizedInput.beneficiariesCount,
-        status: sanitizedInput.status,
+        status: projectStatus,
         category: { connect: { id: sanitizedInput.categoryId } },
       } as any,
       select: projectSelect as any,

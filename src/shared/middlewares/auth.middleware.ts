@@ -69,7 +69,10 @@ export const requireUser = (req: Request, res: Response, next: NextFunction): vo
     }
 
     if (!req.user || req.user.role !== Role.DONOR) {
-      next(new AppError('Forbidden: User access required', 403));
+      res.status(403).json({
+        success: false,
+        message: 'User access required',
+      });
       return;
     }
 

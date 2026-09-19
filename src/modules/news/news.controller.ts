@@ -57,7 +57,7 @@ export const createNews: RequestHandler = async (req, res, next) => {
     const news = await newsService.createNews(payload);
 
     try {
-      await redisService.clearCachePattern('news*');
+      await redisService.clearCache('news');
     } catch (cacheError) {
       logger.error('[Redis] Failed to invalidate news cache after create', cacheError);
     }
@@ -101,7 +101,7 @@ export const updateNews: RequestHandler = async (req, res, next) => {
     const news = await newsService.updateNews({ id, ...payload });
 
     try {
-      await redisService.clearCachePattern('news*');
+      await redisService.clearCache('news');
     } catch (cacheError) {
       logger.error('[Redis] Failed to invalidate news cache after update', cacheError);
     }
@@ -127,7 +127,7 @@ export const deleteNews: RequestHandler = async (req, res, next) => {
     await newsService.deleteNews(id);
 
     try {
-      await redisService.clearCachePattern('news*');
+      await redisService.clearCache('news');
     } catch (cacheError) {
       logger.error('[Redis] Failed to invalidate news cache after delete', cacheError);
     }
