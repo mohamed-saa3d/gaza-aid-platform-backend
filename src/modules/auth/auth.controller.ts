@@ -1,13 +1,45 @@
 import type { Request, RequestHandler } from 'express';
+import { env } from '../../config/env';
 import { AppError } from '../../shared/errors/app-error';
 import { authService } from './auth.service';
 
-const cookieOptions = {
+const getDurationInMs = (value: string): number => {
+  const normalizedValue = value.trim().toLowerCase();
+  const match = normalizedValue.match(/^(\d+)(ms|s|m|h|d)$/);
+
+  if (!match) {
+    return 7 * 24 * 60 * 60 * 1000;
+  }
+
+  const amount = Number(match[1]);
+  const unit = match[2];
+
+  const multipliers = {
+    ms: 1,
+    s: 1000,
+    m: 60 * 1000,
+    h: 60 * 60 * 1000,
+    d: 24 * 60 * 60 * 1000,
+  } as const;
+
+  return amount * multipliers[unit as keyof typeof multipliers];
+};
+
+const cookieBaseOptions = {
   httpOnly: true,
   path: '/',
   sameSite: (process.env.NODE_ENV === 'production' ? 'none' : 'lax') as 'none' | 'lax',
   secure: process.env.NODE_ENV === 'production',
-  maxAge: 7 * 24 * 60 * 60 * 1000,
+};
+
+const accessTokenCookieOptions = {
+  ...cookieBaseOptions,
+  maxAge: getDurationInMs(env.JWT_EXPIRES_IN),
+};
+
+const refreshTokenCookieOptions = {
+  ...cookieBaseOptions,
+  maxAge: getDurationInMs(env.JWT_REFRESH_EXPIRES_IN),
 };
 
 const getAuthenticatedUserId = (req: Request): string => {
@@ -37,7 +69,8 @@ export const login: RequestHandler = async (req, res, next) => {
   try {
     const { accessToken, refreshToken, user } = await authService.login(req.body);
 
-    res.cookie('refreshToken', refreshToken, cookieOptions);
+    res.cookie('accessToken', accessToken, accessTokenCookieOptions);
+    res.cookie('refreshToken', refreshToken, refreshTokenCookieOptions);
 
     res.status(200).json({
       success: true,
@@ -97,13 +130,10 @@ export const forgotPassword: RequestHandler = async (req, res, next) => {
 
 export const refreshToken: RequestHandler = async (req, res, next) => {
   try {
-    console.log('Incoming Refresh Request Cookies:', req.cookies);
-    console.log('Incoming Refresh Request Authorization Header:', req.headers.authorization);
-
     const authHeader = req.headers.authorization;
     const refreshTokenFromCookie = req.cookies?.refreshToken;
-    const refreshTokenValue = refreshTokenFromCookie ??
-      (typeof authHeader === 'string' && authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : undefined);
+    const refreshTokenValue = refreshTokenFromCookie ||
+      (typeof authHeader === 'string' ? authHeader.split(' ')[1] : undefined);
 
     if (!refreshTokenValue) {
       throw new AppError('Refresh token is missing', 401);
@@ -112,7 +142,8 @@ export const refreshToken: RequestHandler = async (req, res, next) => {
     const { accessToken, refreshToken: rotatedRefreshToken } =
       await authService.refreshAccessToken(refreshTokenValue);
 
-    res.cookie('refreshToken', rotatedRefreshToken, cookieOptions);
+    res.cookie('accessToken', accessToken, accessTokenCookieOptions);
+    res.cookie('refreshToken', rotatedRefreshToken, refreshTokenCookieOptions);
 
     res.status(200).json({
       success: true,
@@ -132,12 +163,8 @@ export const logout: RequestHandler = async (req, res, next) => {
       await authService.revokeRefreshToken(refreshToken);
     }
 
-    res.clearCookie('refreshToken', {
-      httpOnly: true,
-      path: '/',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      secure: process.env.NODE_ENV === 'production',
-    });
+    res.clearCookie('accessToken', cookieBaseOptions);
+    res.clearCookie('refreshToken', cookieBaseOptions);
 
     res.status(200).json({
       success: true,

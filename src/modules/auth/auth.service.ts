@@ -320,8 +320,8 @@ export const authService = {
         throw new AppError('Refresh token is invalid or expired', 401);
       }
 
-      const user = await prisma.user.findFirst({
-        where: { id: session.userId, deletedAt: null },
+      const user = await prisma.user.findUnique({
+        where: { id: session.userId },
         select: { id: true, role: true, deletedAt: true },
       });
 

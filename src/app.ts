@@ -25,24 +25,13 @@ import { errorMiddleware } from './shared/errors/error.middleware';
 
 export const app = express();
 
-const allowedOrigins = Array.from(
-  new Set([
-    ...env.ALLOWED_ORIGINS,
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-  ]),
-);
+const allowedOrigins = ['http://localhost:3000', 'http://127.0.0.1:3000'];
 
 app.set('trust proxy', 1);
 app.use(helmet());
 const browserCors = cors({
   origin(origin, callback) {
-    if (!origin) {
-      callback(null, true);
-      return;
-    }
-
-    if (allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
       return;
     }

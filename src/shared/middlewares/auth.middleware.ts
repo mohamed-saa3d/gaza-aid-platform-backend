@@ -26,7 +26,33 @@ const getBearerToken = (authorizationHeader?: string): string | null => {
 };
 
 const getAccessToken = (req: Request): string | null => {
-  return getBearerToken(req.headers.authorization) ?? req.cookies?.accessToken ?? null;
+  const cookieToken = req.cookies?.accessToken;
+  const bearerToken = getBearerToken(req.headers.authorization);
+
+  if (cookieToken) {
+    if (bearerToken) {
+      try {
+        const cookiePayload = verifyToken(cookieToken);
+        const bearerPayload = verifyToken(bearerToken);
+
+        const sameIdentity =
+          cookiePayload.id === bearerPayload.id &&
+          cookiePayload.role === bearerPayload.role &&
+          (cookiePayload.email ?? null) === (bearerPayload.email ?? null) &&
+          Boolean(cookiePayload.isAdmin) === Boolean(bearerPayload.isAdmin);
+
+        if (!sameIdentity) {
+          throw new AppError('Token identity mismatch', 401);
+        }
+      } catch {
+        return null;
+      }
+    }
+
+    return cookieToken;
+  }
+
+  return bearerToken;
 };
 
 export const authenticateUser = (

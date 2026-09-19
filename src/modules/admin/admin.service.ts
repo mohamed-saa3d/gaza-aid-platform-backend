@@ -103,6 +103,7 @@ export const adminService = {
         role: 'ADMIN',
         email: admin.email,
         isAdmin: true,
+        sessionId: crypto.randomUUID(),
       }),
       admin: {
         id: admin.id,

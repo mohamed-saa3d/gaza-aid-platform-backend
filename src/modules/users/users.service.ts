@@ -7,16 +7,17 @@ import type { ChangePasswordInput, UpdateProfileInput } from './users.types';
 
 export const usersService = {
   async getProfile(userId: string) {
-    const user = await prisma.user.findFirst({
-      where: { id: userId, deletedAt: null },
-      select: userSelect,
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { ...userSelect, deletedAt: true },
     });
 
-    if (!user) {
+    if (!user || user.deletedAt) {
       throw new AppError('User was not found', 404);
     }
 
-    return user;
+    const { deletedAt, ...safeUser } = user;
+    return safeUser;
   },
 
   async updateProfile(input: UpdateProfileInput) {
@@ -61,12 +62,12 @@ export const usersService = {
   },
 
   async changePassword(input: ChangePasswordInput) {
-    const user = await prisma.user.findFirst({
-      where: { id: input.userId, deletedAt: null },
-      select: { password: true },
+    const user = await prisma.user.findUnique({
+      where: { id: input.userId },
+      select: { password: true, deletedAt: true },
     });
 
-    if (!user) {
+    if (!user || user.deletedAt) {
       throw new AppError('User was not found', 404);
     }
 
