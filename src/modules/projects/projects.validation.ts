@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import { ProjectStatus } from '@prisma/client';
 
+const mongoObjectIdSchema = z
+  .string()
+  .trim()
+  .regex(/^[0-9a-fA-F]{24}$/, 'Invalid MongoDB ID');
+
 export const createProjectSchema = z.object({
   body: z.object({
     titleAr: z.string().trim().min(2, 'Arabic title is required'),
@@ -11,7 +16,7 @@ export const createProjectSchema = z.object({
     targetAmount: z.coerce.number().positive('Target amount must be positive'),
     beneficiariesCount: z.coerce.number().int().nonnegative().optional(),
     status: z.nativeEnum(ProjectStatus),
-    categoryId: z.string().trim().min(1, 'Category ID is required'),
+    categoryId: mongoObjectIdSchema,
   }).strict(),
 });
 
@@ -25,7 +30,7 @@ export const updateProjectSchema = z.object({
     targetAmount: z.coerce.number().positive('Target amount must be positive').optional(),
     beneficiariesCount: z.coerce.number().int().nonnegative().optional(),
     status: z.nativeEnum(ProjectStatus).optional(),
-    categoryId: z.string().trim().min(1).optional(),
+    categoryId: mongoObjectIdSchema.optional(),
   }).refine((data) => Object.keys(data).length > 0, {
     message: 'At least one field must be provided',
   }).strict(),

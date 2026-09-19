@@ -9,6 +9,7 @@ import { adminRoutes } from './modules/admin/admin.routes';
 import { authRoutes } from './modules/auth/auth.routes';
 import { usersRoutes } from './modules/users/users.routes';
 import { projectsRoutes } from './modules/projects/projects.routes';
+import { categoriesRoutes } from './modules/categories/categories.routes';
 import { donationsRoutes } from './modules/donations/donations.routes';
 import { walletRoutes } from './modules/wallet/wallet.routes';
 import { paymentsRoutes } from './modules/payments/payments.routes';
@@ -104,6 +105,7 @@ if (env.NODE_ENV !== 'production') {
 app.use(`${env.API_PREFIX}/admin`, adminRoutes);
 app.use(`${env.API_PREFIX}/auth`, authRoutes);
 app.use(`${env.API_PREFIX}/users`, usersRoutes);
+app.use(`${env.API_PREFIX}/categories`, categoriesRoutes);
 app.use(`${env.API_PREFIX}/projects`, projectsRoutes);
 app.use(`${env.API_PREFIX}/donations`, donationsRoutes);
 app.use(`${env.API_PREFIX}/payments`, paymentsRoutes);
