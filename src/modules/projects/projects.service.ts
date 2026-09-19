@@ -29,7 +29,7 @@ export const projectsService = {
       ...(status && status !== 'ALL' ? { status } : {}),
     };
 
-    const [total, projects] = await prisma.$transaction([
+    const [total, projects] = await Promise.all([
       prisma.project.count({ where }),
       prisma.project.findMany({
         where,
@@ -73,7 +73,7 @@ export const projectsService = {
   },
 
   async getProjectStats() {
-    const [total, completed] = await prisma.$transaction([
+    const [total, completed] = await Promise.all([
       prisma.project.count({ where: { deletedAt: null } }),
       prisma.project.count({
         where: { deletedAt: null, status: ProjectStatus.COMPLETED },

@@ -8,7 +8,7 @@ import type { CreateLiveStreamInput, UpdateLiveStreamInput } from './live-stream
 export const liveStreamsService = {
   async getLiveStreams(page = 1, limit = 10) {
     const where = { isActive: true };
-    const [total, liveStreams] = await prisma.$transaction([
+    const [total, liveStreams] = await Promise.all([
       prisma.liveStream.count({ where }),
       prisma.liveStream.findMany({
         where,

@@ -8,7 +8,7 @@ import type { CreateNewsInput, UpdateNewsInput } from './news.types';
 
 export const newsService = {
   async getNewsList(page = 1, limit = 10) {
-    const [total, news] = await prisma.$transaction([
+    const [total, news] = await Promise.all([
       prisma.news.count(),
       prisma.news.findMany({
         orderBy: { createdAt: 'desc' },

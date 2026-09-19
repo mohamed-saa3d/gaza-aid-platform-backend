@@ -8,7 +8,7 @@ import type { CreateFaqInput, UpdateFaqInput } from './faq.types';
 export const faqService = {
   async getFaqs(page = 1, limit = 10) {
     const where = { isActive: true };
-    const [total, faqs] = await prisma.$transaction([
+    const [total, faqs] = await Promise.all([
       prisma.fAQ.count({ where }),
       prisma.fAQ.findMany({
         where,

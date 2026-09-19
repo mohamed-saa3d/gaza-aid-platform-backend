@@ -96,7 +96,7 @@ export const donationsService = {
   },
 
   async getAllDonations(page = 1, limit = 10) {
-    const [total, donations] = await prisma.$transaction([
+    const [total, donations] = await Promise.all([
       prisma.donation.count(),
       prisma.donation.findMany({
         orderBy: { createdAt: 'desc' },

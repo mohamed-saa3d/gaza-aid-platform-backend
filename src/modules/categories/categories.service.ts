@@ -16,7 +16,7 @@ export const categoriesService = {
         }
       : {};
 
-    const [total, categories] = await prisma.$transaction([
+    const [total, categories] = await Promise.all([
       prisma.category.count({ where }),
       prisma.category.findMany({
         where,
