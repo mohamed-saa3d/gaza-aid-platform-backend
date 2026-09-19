@@ -106,8 +106,8 @@ export const createProject: RequestHandler = async (req, res, next) => {
     // invalidate related caches (fail silently)
     try {
       await redisService.clearCachePattern('projects*');
-    } catch (err) {
-      logger.warn('Failed to clear projects cache after create', err);
+    } catch (cacheError) {
+      logger.error('[Redis] Failed to invalidate projects cache after create', cacheError);
     }
 
     res.status(201).json({
@@ -151,8 +151,8 @@ export const updateProject: RequestHandler = async (req, res, next) => {
     // invalidate cache
     try {
       await redisService.clearCachePattern('projects*');
-    } catch (err) {
-      logger.warn('Failed to clear projects cache after update', err);
+    } catch (cacheError) {
+      logger.error('[Redis] Failed to invalidate projects cache after update', cacheError);
     }
 
     res.status(200).json({
@@ -192,8 +192,8 @@ export const deleteProject: RequestHandler = async (req, res, next) => {
 
     try {
       await redisService.clearCachePattern('projects*');
-    } catch (err) {
-      logger.warn('Failed to clear projects cache after delete', err);
+    } catch (cacheError) {
+      logger.error('[Redis] Failed to invalidate projects cache after delete', cacheError);
     }
 
     res.status(200).json({

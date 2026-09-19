@@ -27,6 +27,12 @@ class ResilientRedisStore implements Store {
     this.memoryStore.init(options);
 
     if (!redisClient.isReady) {
+      // Wait for Redis to be ready before initializing the Redis-backed store.
+      redisClient.once('ready', () => {
+        void Promise.resolve(this.redisStore.init?.(options)).catch((error: unknown) => {
+          logger.warn('[RateLimiter] Redis store delayed init failed', error);
+        });
+      });
       return;
     }
 
@@ -76,7 +82,7 @@ class ResilientRedisStore implements Store {
   }
 }
 
-const developmentMultiplier = process.env.NODE_ENV === 'development' ? 10 : 1;
+const developmentMultiplier = 1;
 
 const createLimiter = ({
   group,
