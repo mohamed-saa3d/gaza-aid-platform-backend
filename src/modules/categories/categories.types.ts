@@ -1,6 +1,8 @@
 export type CreateCategoryInput = {
   nameAr: string;
   nameEn: string;
+  descriptionAr?: string;
+  descriptionEn?: string;
 };
 
 export type UpdateCategoryInput = Partial<CreateCategoryInput>;

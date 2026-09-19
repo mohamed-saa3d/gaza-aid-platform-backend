@@ -3,7 +3,7 @@ export type CreateNewsInput = {
   titleEn: string;
   descriptionAr: string;
   descriptionEn: string;
-  imageUrl: string;
+  imageUrl?: string;
   imgPublicId?: string | null;
   detailsUrl?: string | null;
   isUrgent?: boolean;

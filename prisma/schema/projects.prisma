@@ -2,6 +2,8 @@ model Category {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   nameAr    String   @unique
   nameEn    String   @unique
+  descriptionAr String?
+  descriptionEn String?
   createdAt DateTime @default(now())
 
   projects Project[]

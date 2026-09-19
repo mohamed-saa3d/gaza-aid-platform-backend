@@ -10,6 +10,8 @@ export const categoriesService = {
           OR: [
             { nameAr: { contains: search, mode: 'insensitive' as const } },
             { nameEn: { contains: search, mode: 'insensitive' as const } },
+            { descriptionAr: { contains: search, mode: 'insensitive' as const } },
+            { descriptionEn: { contains: search, mode: 'insensitive' as const } },
           ],
         }
       : {};
@@ -48,6 +50,8 @@ export const categoriesService = {
         data: {
           nameAr: data.nameAr.trim(),
           nameEn: data.nameEn.trim(),
+          ...(data.descriptionAr !== undefined ? { descriptionAr: data.descriptionAr.trim() } : {}),
+          ...(data.descriptionEn !== undefined ? { descriptionEn: data.descriptionEn.trim() } : {}),
         },
       });
     } catch (error) {
@@ -66,6 +70,8 @@ export const categoriesService = {
         data: {
           ...(data.nameAr !== undefined ? { nameAr: data.nameAr.trim() } : {}),
           ...(data.nameEn !== undefined ? { nameEn: data.nameEn.trim() } : {}),
+          ...(data.descriptionAr !== undefined ? { descriptionAr: data.descriptionAr.trim() } : {}),
+          ...(data.descriptionEn !== undefined ? { descriptionEn: data.descriptionEn.trim() } : {}),
         },
       });
     } catch (error) {

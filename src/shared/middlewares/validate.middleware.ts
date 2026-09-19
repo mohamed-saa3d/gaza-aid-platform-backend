@@ -25,7 +25,7 @@ export const validateRequest = (schema: RequestValidationSchema): RequestHandler
       }
 
       if (parsed.query !== undefined) {
-        req.query = parsed.query as typeof req.query;
+        Object.assign(req.query, parsed.query);
       }
 
       next();

@@ -111,7 +111,7 @@ app.use(`${env.API_PREFIX}/donations`, donationsRoutes);
 app.use(`${env.API_PREFIX}/payments`, paymentsRoutes);
 app.use(`${env.API_PREFIX}/wallets`, walletRoutes);
 app.use(`${env.API_PREFIX}/news`, newsRoutes);
-app.use(`${env.API_PREFIX}/faq`, faqRoutes);
+app.use(`${env.API_PREFIX}/faqs`, faqRoutes);
 app.use(`${env.API_PREFIX}/live-streams`, liveStreamsRoutes);
 app.use(`${env.API_PREFIX}/subscribers`, subscriberRoutes);
 app.use(`${env.API_PREFIX}/ratings`, ratingsRoutes);

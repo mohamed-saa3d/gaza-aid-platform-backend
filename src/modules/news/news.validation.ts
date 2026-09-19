@@ -1,13 +1,19 @@
 import { z } from 'zod';
 
+const formBoolean = z.preprocess((value) => {
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return value;
+}, z.boolean().optional());
+
 const newsBase = {
   titleAr: z.string().trim().min(2, 'Arabic title is required'),
   titleEn: z.string().trim().min(2, 'English title is required'),
   descriptionAr: z.string().trim().min(10, 'Arabic description is required'),
   descriptionEn: z.string().trim().min(10, 'English description is required'),
-  imageUrl: z.string().trim().url('Must be a valid URL'),
+  imageUrl: z.string().trim().url('Must be a valid URL').optional(),
   detailsUrl: z.string().trim().url('Invalid details URL').optional(),
-  isUrgent: z.boolean().optional(),
+  isUrgent: formBoolean,
 };
 
 export const createNewsSchema = z.object({
