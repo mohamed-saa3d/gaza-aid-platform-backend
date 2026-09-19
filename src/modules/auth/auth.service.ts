@@ -275,10 +275,32 @@ export const authService = {
       throw new AppError('Refresh token is invalid or expired', 401);
     }
 
-    const rotated = await prisma.$transaction(async (tx) => {
-      const session = await tx.refreshSession.findFirst({
+    if (payload.isAdmin) {
+      const nextSessionId = crypto.randomUUID();
+      const nextRefreshToken = signRefreshToken({
+        id: payload.id,
+        role: payload.role,
+        email: payload.email,
+        isAdmin: true,
+        sessionId: nextSessionId,
+      });
+
+      return {
+        accessToken: signToken({
+          id: payload.id,
+          role: payload.role,
+          email: payload.email,
+          isAdmin: true,
+        }),
+        refreshToken: nextRefreshToken,
+      };
+    }
+
+    try {
+      const tokenHash = hashToken(refreshToken);
+      const session = await prisma.refreshSession.findFirst({
         where: {
-          tokenHash: hashToken(refreshToken),
+          tokenHash,
         },
         select: {
           id: true,
@@ -298,8 +320,8 @@ export const authService = {
         throw new AppError('Refresh token is invalid or expired', 401);
       }
 
-      const user = await tx.user.findFirst({
-        where: { id: session.userId },
+      const user = await prisma.user.findFirst({
+        where: { id: session.userId, deletedAt: null },
         select: { id: true, role: true, deletedAt: true },
       });
 
@@ -307,10 +329,10 @@ export const authService = {
         throw new AppError('Refresh token is invalid or user no longer exists', 401);
       }
 
-      const revoked = await tx.refreshSession.updateMany({
+      const revoked = await prisma.refreshSession.updateMany({
         where: {
           id: session.id,
-          tokenHash: hashToken(refreshToken),
+          tokenHash,
         },
         data: {
           revokedAt: new Date(),
@@ -329,7 +351,7 @@ export const authService = {
         sessionId: nextSessionId,
       });
 
-      await tx.refreshSession.create({
+      await prisma.refreshSession.create({
         data: {
           id: nextSessionId,
           userId: user.id,
@@ -339,16 +361,20 @@ export const authService = {
         },
       });
 
-      return { user, refreshToken: nextRefreshToken };
-    });
+      return {
+        accessToken: signToken({
+          id: user.id,
+          role: user.role,
+        }),
+        refreshToken: nextRefreshToken,
+      };
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
 
-    return {
-      accessToken: signToken({
-        id: rotated.user.id,
-        role: rotated.user.role,
-      }),
-      refreshToken: rotated.refreshToken,
-    };
+      throw new AppError('Unable to refresh session. Please log in again.', 401);
+    }
   },
 
   async revokeRefreshToken(refreshToken: string) {
