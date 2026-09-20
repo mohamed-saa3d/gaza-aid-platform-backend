@@ -44,6 +44,20 @@ const refreshTokenCookieOptions = {
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
+const userCookieNames = {
+  access: 'userAccessToken',
+  refresh: 'userRefreshToken',
+  role: 'userRole',
+  scope: 'authScope',
+};
+
+const adminCookieNames = {
+  access: 'adminAccessToken',
+  refresh: 'adminRefreshToken',
+  role: 'adminRole',
+  scope: 'authScope',
+};
+
 const getSingleParam = (param: string | string[] | undefined): string | undefined => {
   return Array.isArray(param) ? param[0] : param;
 };
@@ -53,8 +67,15 @@ export const adminLogin: RequestHandler = async (req, res, next) => {
     const { email, password } = req.body as { email: string; password: string };
     const { accessToken, refreshToken, admin } = await adminService.login({ email, password });
 
-    res.cookie('accessToken', accessToken, accessTokenCookieOptions);
-    res.cookie('refreshToken', refreshToken, refreshTokenCookieOptions);
+    res.clearCookie('userAccessToken', cookieBaseOptions);
+    res.clearCookie('userRefreshToken', cookieBaseOptions);
+    res.clearCookie('userRole', cookieBaseOptions);
+    res.cookie(adminCookieNames.access, accessToken, accessTokenCookieOptions);
+    res.cookie(adminCookieNames.refresh, refreshToken, refreshTokenCookieOptions);
+    res.cookie(adminCookieNames.role, admin.role, { ...cookieBaseOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
+    res.cookie(adminCookieNames.scope, 'admin', { ...cookieBaseOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
+    res.clearCookie('accessToken', cookieBaseOptions);
+    res.clearCookie('refreshToken', cookieBaseOptions);
 
     res.status(200).json({
       success: true,

@@ -13,16 +13,19 @@ const smokeClientIp = `198.51.100.${(Date.now() % 200) + 1}`;
 const testEmail = `smoke-${Date.now()}@example.test`;
 const testPassword = 'SmokeTestPassword123!';
 
-const getCookie = (response: Response): string => {
+const getCookie = (response: Response, cookieName = 'refreshToken'): string => {
   const setCookie = response.headers.get('set-cookie');
   assert.ok(setCookie, 'Expected a refresh token cookie');
-  const cookie = setCookie.split(';', 1)[0];
-  assert.ok(cookie.startsWith('refreshToken='), 'Expected refreshToken cookie');
-  return cookie;
+  const cookie = setCookie
+    .split(',')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${cookieName}=`));
+  assert.ok(cookie, `Expected ${cookieName} cookie`);
+  return cookie.split(';', 1)[0];
 };
 
-const getRefreshPayload = (cookie: string): { sessionId?: string } => {
-  const token = cookie.slice('refreshToken='.length);
+const getRefreshPayload = (cookie: string, cookieName = 'refreshToken'): { sessionId?: string } => {
+  const token = cookie.slice(`${cookieName}=`.length);
   const payload = token.split('.')[1];
   assert.ok(payload, 'Expected a JWT refresh token payload');
   return JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as {
@@ -30,7 +33,7 @@ const getRefreshPayload = (cookie: string): { sessionId?: string } => {
   };
 };
 
-const getRefreshTokenValue = (cookie: string): string => cookie.slice('refreshToken='.length);
+const getRefreshTokenValue = (cookie: string, cookieName = 'refreshToken'): string => cookie.slice(`${cookieName}=`.length);
 
 const hashToken = (token: string): string =>
   crypto.createHash('sha256').update(token).digest('hex');
@@ -141,8 +144,8 @@ const main = async () => {
       body: JSON.stringify({ email: testEmail, password: testPassword }),
     });
     await expectStatus(loginResponse, [200], 'login');
-    firstRefreshCookie = getCookie(loginResponse);
-    const refreshPayload = getRefreshPayload(firstRefreshCookie);
+    firstRefreshCookie = getCookie(loginResponse, 'userRefreshToken');
+    const refreshPayload = getRefreshPayload(firstRefreshCookie, 'userRefreshToken');
     assert.ok(refreshPayload.sessionId, 'Expected sessionId in refresh token');
     const persistedSession = await prisma.refreshSession.findUnique({
       where: { id: refreshPayload.sessionId },
@@ -165,7 +168,7 @@ const main = async () => {
       body: '{}',
     });
     await expectStatus(refreshResponse, [200], 'refresh rotation');
-    rotatedRefreshCookie = getCookie(refreshResponse);
+    rotatedRefreshCookie = getCookie(refreshResponse, 'userRefreshToken');
 
     const oldTokenResponse = await fetch(`${baseUrl}/api/auth/refresh`, {
       method: 'POST',

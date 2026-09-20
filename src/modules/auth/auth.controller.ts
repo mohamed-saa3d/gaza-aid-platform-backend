@@ -42,6 +42,20 @@ const refreshTokenCookieOptions = {
   maxAge: getDurationInMs(env.JWT_REFRESH_EXPIRES_IN),
 };
 
+const userCookieNames = {
+  access: 'userAccessToken',
+  refresh: 'userRefreshToken',
+  role: 'userRole',
+  scope: 'authScope',
+};
+
+const adminCookieNames = {
+  access: 'adminAccessToken',
+  refresh: 'adminRefreshToken',
+  role: 'adminRole',
+  scope: 'authScope',
+};
+
 const getAuthenticatedUserId = (req: Request): string => {
   if (!req.user?.id) {
     throw new AppError('Authentication is required', 401);
@@ -69,8 +83,15 @@ export const login: RequestHandler = async (req, res, next) => {
   try {
     const { accessToken, refreshToken, user } = await authService.login(req.body);
 
-    res.cookie('accessToken', accessToken, accessTokenCookieOptions);
-    res.cookie('refreshToken', refreshToken, refreshTokenCookieOptions);
+    res.clearCookie('adminAccessToken', cookieBaseOptions);
+    res.clearCookie('adminRefreshToken', cookieBaseOptions);
+    res.clearCookie('adminRole', cookieBaseOptions);
+    res.cookie(userCookieNames.access, accessToken, accessTokenCookieOptions);
+    res.cookie(userCookieNames.refresh, refreshToken, refreshTokenCookieOptions);
+    res.cookie(userCookieNames.role, user.role, { ...cookieBaseOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
+    res.cookie(userCookieNames.scope, 'user', { ...cookieBaseOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
+    res.clearCookie('accessToken', cookieBaseOptions);
+    res.clearCookie('refreshToken', cookieBaseOptions);
 
     res.status(200).json({
       success: true,
@@ -131,7 +152,25 @@ export const forgotPassword: RequestHandler = async (req, res, next) => {
 export const refreshToken: RequestHandler = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    const refreshTokenFromCookie = req.cookies?.refreshToken;
+    const authScope = req.cookies?.authScope || req.cookies?.scope;
+    console.info('[AUTH REFRESH]', {
+      correlationId: req.headers['x-correlation-id'] || 'n/a',
+      method: req.method,
+      route: req.originalUrl,
+      authScope: authScope || 'unknown',
+      cookiePresence: {
+        userRefreshToken: Boolean(req.cookies?.userRefreshToken),
+        adminRefreshToken: Boolean(req.cookies?.adminRefreshToken),
+        refreshToken: Boolean(req.cookies?.refreshToken),
+        authScopeCookie: Boolean(req.cookies?.authScope),
+      },
+      hasAuthorizationHeader: Boolean(authHeader),
+    });
+    const refreshTokenFromCookie = authScope === 'admin'
+      ? req.cookies?.adminRefreshToken || req.cookies?.refreshToken
+      : authScope === 'user'
+        ? req.cookies?.userRefreshToken || req.cookies?.refreshToken
+        : req.cookies?.userRefreshToken || req.cookies?.adminRefreshToken || req.cookies?.refreshToken;
     const refreshTokenValue = refreshTokenFromCookie ||
       (typeof authHeader === 'string' ? authHeader.split(' ')[1] : undefined);
 
@@ -142,8 +181,41 @@ export const refreshToken: RequestHandler = async (req, res, next) => {
     const { accessToken, refreshToken: rotatedRefreshToken } =
       await authService.refreshAccessToken(refreshTokenValue);
 
-    res.cookie('accessToken', accessToken, accessTokenCookieOptions);
-    res.cookie('refreshToken', rotatedRefreshToken, refreshTokenCookieOptions);
+    const identityScope = refreshTokenValue && (() => {
+      try {
+        const payload = require('jsonwebtoken').verify(refreshTokenValue, process.env.JWT_REFRESH_SECRET!);
+        console.info('[AUTH REFRESH] decoded refresh claims', {
+          correlationId: req.headers['x-correlation-id'] || 'n/a',
+          route: req.originalUrl,
+          userId: payload.id,
+          role: payload.role,
+          isAdmin: Boolean(payload.isAdmin),
+          sessionId: payload.sessionId || null,
+          exp: payload.exp,
+          iat: payload.iat,
+        });
+        return payload.isAdmin ? 'admin' : 'user';
+      } catch (error) {
+        console.warn('[AUTH REFRESH] refresh verification failed', {
+          correlationId: req.headers['x-correlation-id'] || 'n/a',
+          route: req.originalUrl,
+          error: error instanceof Error ? error.message : 'unknown',
+        });
+        return 'user';
+      }
+    })();
+
+    const targetAccessCookie = identityScope === 'admin' ? 'adminAccessToken' : 'userAccessToken';
+    const targetRefreshCookie = identityScope === 'admin' ? 'adminRefreshToken' : 'userRefreshToken';
+    const targetRoleCookie = identityScope === 'admin' ? 'adminRole' : 'userRole';
+    const targetScopeCookie = identityScope === 'admin' ? 'admin' : 'user';
+
+    res.clearCookie('accessToken', cookieBaseOptions);
+    res.clearCookie('refreshToken', cookieBaseOptions);
+    res.cookie(targetAccessCookie, accessToken, accessTokenCookieOptions);
+    res.cookie(targetRefreshCookie, rotatedRefreshToken, refreshTokenCookieOptions);
+    res.cookie(targetRoleCookie, identityScope === 'admin' ? 'ADMIN' : 'DONOR', { ...cookieBaseOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
+    res.cookie('authScope', targetScopeCookie, { ...cookieBaseOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
 
     res.status(200).json({
       success: true,
@@ -157,7 +229,7 @@ export const refreshToken: RequestHandler = async (req, res, next) => {
 
 export const logout: RequestHandler = async (req, res, next) => {
   try {
-    const refreshToken = req.cookies?.refreshToken;
+    const refreshToken = req.cookies?.userRefreshToken || req.cookies?.adminRefreshToken || req.cookies?.refreshToken;
 
     if (refreshToken) {
       await authService.revokeRefreshToken(refreshToken);
@@ -165,6 +237,13 @@ export const logout: RequestHandler = async (req, res, next) => {
 
     res.clearCookie('accessToken', cookieBaseOptions);
     res.clearCookie('refreshToken', cookieBaseOptions);
+    res.clearCookie('userAccessToken', cookieBaseOptions);
+    res.clearCookie('userRefreshToken', cookieBaseOptions);
+    res.clearCookie('adminAccessToken', cookieBaseOptions);
+    res.clearCookie('adminRefreshToken', cookieBaseOptions);
+    res.clearCookie('userRole', cookieBaseOptions);
+    res.clearCookie('adminRole', cookieBaseOptions);
+    res.clearCookie('authScope', cookieBaseOptions);
 
     res.status(200).json({
       success: true,

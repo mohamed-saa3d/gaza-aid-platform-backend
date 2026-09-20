@@ -26,8 +26,32 @@ const getBearerToken = (authorizationHeader?: string): string | null => {
 };
 
 const getAccessToken = (req: Request): string | null => {
-  const cookieToken = req.cookies?.accessToken;
+  const routeIsAdmin = req.originalUrl.startsWith('/api/v1/admin') || req.originalUrl.includes('/admin/');
+  const candidateCookies = [
+    routeIsAdmin ? req.cookies?.adminAccessToken : req.cookies?.userAccessToken,
+    routeIsAdmin ? req.cookies?.accessToken : req.cookies?.accessToken,
+    routeIsAdmin ? null : req.cookies?.accessToken,
+    req.cookies?.accessToken,
+    req.cookies?.userAccessToken,
+    req.cookies?.adminAccessToken,
+  ].filter((token): token is string => Boolean(token));
+
+  const cookieToken = candidateCookies[0] ?? null;
   const bearerToken = getBearerToken(req.headers.authorization);
+
+  console.info('[AUTH MIDDLEWARE]', {
+    correlationId: req.headers['x-correlation-id'] || 'n/a',
+    method: req.method,
+    route: req.originalUrl,
+    scope: routeIsAdmin ? 'admin' : 'user',
+    cookieNames: {
+      adminAccessToken: Boolean(req.cookies?.adminAccessToken),
+      userAccessToken: Boolean(req.cookies?.userAccessToken),
+      accessToken: Boolean(req.cookies?.accessToken),
+      hasBearer: Boolean(bearerToken),
+    },
+    selectedCookie: cookieToken ? 'present' : 'absent',
+  });
 
   if (cookieToken) {
     if (bearerToken) {
@@ -71,10 +95,26 @@ export const authenticateUser = (
   }
 
   try {
-    req.user = verifyToken(token);
+    const decoded = verifyToken(token);
+    console.info('[AUTH MIDDLEWARE] verified access token', {
+      correlationId: req.headers['x-correlation-id'] || 'n/a',
+      route: req.originalUrl,
+      userId: decoded.id,
+      role: decoded.role,
+      isAdmin: Boolean(decoded.isAdmin),
+      sessionId: decoded.sessionId || null,
+      exp: decoded.exp,
+      iat: decoded.iat,
+    });
+    req.user = decoded;
     next();
     return;
-  } catch {
+  } catch (error) {
+    console.warn('[AUTH MIDDLEWARE] access token verification failed', {
+      correlationId: req.headers['x-correlation-id'] || 'n/a',
+      route: req.originalUrl,
+      error: error instanceof Error ? error.message : 'unknown',
+    });
     res.status(401).json({
       success: false,
       message: 'Unauthorized',
