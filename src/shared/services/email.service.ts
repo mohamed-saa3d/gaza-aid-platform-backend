@@ -3,7 +3,9 @@ import {
   renderVerificationHtml,
   renderPasswordResetHtml,
 } from './email/email.templates';
-import { emailQueue } from '../../queues/email.queue';
+import { emailQueue, emailQueueEvents } from '../../queues/email.queue';
+
+const EMAIL_DELIVERY_TIMEOUT_MS = 15000;
 
 export const emailService = {
   async sendVerificationEmail(to: string, otp: string) {
@@ -14,7 +16,8 @@ export const emailService = {
       html: renderVerificationHtml(otp),
     };
 
-    await emailQueue.add('verification', message);
+    const job = await emailQueue.add('verification', message);
+    await job.waitUntilFinished(emailQueueEvents, EMAIL_DELIVERY_TIMEOUT_MS);
   },
 
   async sendPasswordResetEmail(to: string, otp: string) {
@@ -25,6 +28,7 @@ export const emailService = {
       html: renderPasswordResetHtml(otp),
     };
 
-    await emailQueue.add('password-reset', message);
+    const job = await emailQueue.add('password-reset', message);
+    await job.waitUntilFinished(emailQueueEvents, EMAIL_DELIVERY_TIMEOUT_MS);
   },
 };

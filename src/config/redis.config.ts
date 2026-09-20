@@ -1,14 +1,15 @@
 import { createClient } from 'redis';
 import logger from '../shared/utils/logger';
 
-const redisUrl = process.env.REDIS_URL ?? 'redis://localhost:6379';
+const rawRedisUrl = process.env.REDIS_URL ?? 'redis://127.0.0.1:6379';
+const redisUrl = rawRedisUrl.replace('://localhost', '://127.0.0.1');
 export const REDIS_COMMAND_TIMEOUT_MS = 1000;
 
 export const redisClient = createClient({
   url: redisUrl,
   socket: {
     connectTimeout: 5000,
-    reconnectStrategy: false,
+    reconnectStrategy: (retries: number) => Math.min(retries * 100, 3000),
   },
 });
 

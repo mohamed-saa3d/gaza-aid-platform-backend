@@ -25,9 +25,10 @@ const getBearerToken = (authorizationHeader?: string): string | null => {
   return token;
 };
 
-const getAccessToken = (req: Request): string | null => {
-  const routeIsAdmin = req.originalUrl.startsWith('/api/v1/admin') || req.originalUrl.includes('/admin/');
-  const cookieToken = routeIsAdmin
+type AuthScope = 'user' | 'admin';
+
+const getAccessToken = (req: Request, scope: AuthScope): string | null => {
+  const cookieToken = scope === 'admin'
     ? req.cookies?.adminAccessToken ?? null
     : req.cookies?.userAccessToken ?? null;
   const bearerToken = getBearerToken(req.headers.authorization);
@@ -36,7 +37,7 @@ const getAccessToken = (req: Request): string | null => {
     correlationId: req.headers['x-correlation-id'] || 'n/a',
     method: req.method,
     route: req.originalUrl,
-    scope: routeIsAdmin ? 'admin' : 'user',
+    scope,
     cookieNames: {
       adminAccessToken: Boolean(req.cookies?.adminAccessToken),
       userAccessToken: Boolean(req.cookies?.userAccessToken),
@@ -75,8 +76,9 @@ export const authenticateUser = (
   req: Request,
   res: Response,
   next: NextFunction,
+  scope: AuthScope,
 ): void => {
-  const token = getAccessToken(req);
+  const token = getAccessToken(req, scope);
 
   if (!token) {
     res.status(401).json({
@@ -116,7 +118,7 @@ export const authenticateUser = (
 };
 
 export const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
-  authenticateUser(req, res, next);
+  authenticateUser(req, res, next, 'user');
 };
 
 export const requireUser = (req: Request, res: Response, next: NextFunction): void => {
@@ -135,7 +137,7 @@ export const requireUser = (req: Request, res: Response, next: NextFunction): vo
     }
 
     next();
-  });
+  }, 'user');
 };
 
 export const requireAdmin = (req: Request, res: Response, next: NextFunction): void => {
@@ -151,7 +153,7 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction): v
     }
 
     next();
-  });
+  }, 'admin');
 };
 
 export const requireSuperAdmin = (req: Request, res: Response, next: NextFunction): void => {
@@ -172,5 +174,5 @@ export const requireSuperAdmin = (req: Request, res: Response, next: NextFunctio
     }
 
     next();
-  });
+  }, 'admin');
 };

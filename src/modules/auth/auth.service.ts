@@ -14,24 +14,8 @@ const hashToken = (token: string) => crypto.createHash('sha256').update(token).d
 const normalizeEmail = (email: string): string => email.trim().toLowerCase();
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const VERIFICATION_EMAIL_TIMEOUT_MS = 5000;
 const REGISTRATION_TTL_SECONDS = 15 * 60;
 const registrationKey = (email: string): string => `reg:${normalizeEmail(email)}`;
-
-const sendVerificationEmailNonBlocking = (email: string, otp: string): void => {
-  void (async () => {
-    try {
-      await Promise.race([
-        emailService.sendVerificationEmail(email, otp),
-        new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('Verification email timed out')), VERIFICATION_EMAIL_TIMEOUT_MS);
-        }),
-      ]);
-    } catch (error: unknown) {
-      console.error('Failed to send verification email', error);
-    }
-  })();
-};
 
 const createRefreshSession = async (userId: string, role: string) => {
   const sessionId = crypto.randomUUID();
@@ -84,7 +68,18 @@ export const authService = {
         JSON.stringify(pendingRegistration),
       );
 
-      sendVerificationEmailNonBlocking(email, otp);
+      try {
+        await emailService.sendVerificationEmail(email, otp);
+        console.info('[Auth] Verification email delivery completed', { email });
+      } catch (error) {
+        await redisClient.del(registrationKey(email));
+        console.error('[Auth] Verification email delivery failed', {
+          email,
+          error: error instanceof Error ? error.message : 'unknown',
+        });
+        throw new AppError('Unable to send verification email. Please try again later.', 502);
+      }
+
       return {
         message: 'تم إرسال رمز التحقق، يرجى تأكيد البريد لإنشاء الحساب',
         redirectTo: '/verify-otp',
@@ -119,7 +114,7 @@ export const authService = {
           REGISTRATION_TTL_SECONDS,
           JSON.stringify(updatedPending),
         );
-        sendVerificationEmailNonBlocking(normalizedEmail, otp);
+        await emailService.sendVerificationEmail(normalizedEmail, otp);
 
         return {
           message: 'OTP sent successfully to your email',
@@ -167,7 +162,7 @@ export const authService = {
       },
     });
 
-    sendVerificationEmailNonBlocking(normalizedEmail, otp);
+    await emailService.sendVerificationEmail(normalizedEmail, otp);
 
     return {
       message: 'OTP sent successfully to your email',

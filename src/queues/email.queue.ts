@@ -1,4 +1,4 @@
-import { Queue } from 'bullmq';
+import { Queue, QueueEvents } from 'bullmq';
 import { bullmqConnection } from './redis.connection';
 
 export type EmailJobData = {
@@ -16,4 +16,8 @@ export const emailQueue = new Queue<EmailJobData>('email', {
     removeOnComplete: 1000,
     removeOnFail: 5000,
   },
+});
+
+export const emailQueueEvents = new QueueEvents('email', {
+  connection: bullmqConnection,
 });
