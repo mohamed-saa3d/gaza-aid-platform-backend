@@ -11,8 +11,8 @@ import {
   changePassword,
   forgotPassword,
   login,
-  logout,
-  refreshToken,
+  logoutUser,
+  refreshUserToken,
   register,
   resendOtp,
   resetPassword,
@@ -33,8 +33,8 @@ export const authRoutes = Router();
 
 authRoutes.post('/register', registerLimiter, validateRequest(registerSchema), register);
 authRoutes.post('/login', loginLimiter, validateRequest(loginSchema), login);
-authRoutes.post('/refresh', generalAuthLimiter, validateRequest(refreshTokenSchema), refreshToken);
-authRoutes.post('/logout', generalAuthLimiter, logout);
+authRoutes.post('/user/refresh', generalAuthLimiter, validateRequest(refreshTokenSchema), refreshUserToken);
+authRoutes.post('/user/logout', generalAuthLimiter, logoutUser);
 authRoutes.post('/verify-email', otpLimiter, validateRequest(verifyEmailSchema), verifyEmail);
 authRoutes.post('/resend-otp', otpLimiter, validateRequest(resendOtpSchema), resendOtp);
 authRoutes.post('/forgot-password', otpLimiter, validateRequest(forgotPasswordSchema), forgotPassword);

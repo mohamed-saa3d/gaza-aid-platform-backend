@@ -7,6 +7,8 @@ export type AuthTokenPayload = {
   sessionId?: string;
   email?: string;
   isAdmin?: boolean;
+  exp?: number;
+  iat?: number;
 };
 
 export const signToken = (payload: AuthTokenPayload): string => {

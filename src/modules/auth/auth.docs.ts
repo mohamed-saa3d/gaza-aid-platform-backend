@@ -87,10 +87,10 @@
 
 /**
  * @openapi
- * /api/auth/refresh:
+ * /api/auth/user/refresh:
  *   post:
  *     tags: [Auth]
- *     summary: Refresh the access token using the refreshToken cookie
+ *     summary: Refresh the user access token using the userRefreshToken cookie
  *     security:
  *       - cookieAuth: []
  *     responses:
@@ -121,15 +121,15 @@
 
 /**
  * @openapi
- * /api/auth/logout:
+ * /api/auth/user/logout:
  *   post:
  *     tags: [Auth]
- *     summary: Log out the authenticated user and revoke the refresh token
+ *     summary: Log out the user and revoke the user refresh token
  *     security:
  *       - cookieAuth: []
  *     responses:
- *       204:
- *         description: Logged out successfully. The refreshToken cookie is cleared.
+ *       200:
+ *         description: Logged out successfully. The user cookies are cleared.
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  */

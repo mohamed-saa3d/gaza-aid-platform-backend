@@ -27,16 +27,9 @@ const getBearerToken = (authorizationHeader?: string): string | null => {
 
 const getAccessToken = (req: Request): string | null => {
   const routeIsAdmin = req.originalUrl.startsWith('/api/v1/admin') || req.originalUrl.includes('/admin/');
-  const candidateCookies = [
-    routeIsAdmin ? req.cookies?.adminAccessToken : req.cookies?.userAccessToken,
-    routeIsAdmin ? req.cookies?.accessToken : req.cookies?.accessToken,
-    routeIsAdmin ? null : req.cookies?.accessToken,
-    req.cookies?.accessToken,
-    req.cookies?.userAccessToken,
-    req.cookies?.adminAccessToken,
-  ].filter((token): token is string => Boolean(token));
-
-  const cookieToken = candidateCookies[0] ?? null;
+  const cookieToken = routeIsAdmin
+    ? req.cookies?.adminAccessToken ?? null
+    : req.cookies?.userAccessToken ?? null;
   const bearerToken = getBearerToken(req.headers.authorization);
 
   console.info('[AUTH MIDDLEWARE]', {
@@ -47,7 +40,6 @@ const getAccessToken = (req: Request): string | null => {
     cookieNames: {
       adminAccessToken: Boolean(req.cookies?.adminAccessToken),
       userAccessToken: Boolean(req.cookies?.userAccessToken),
-      accessToken: Boolean(req.cookies?.accessToken),
       hasBearer: Boolean(bearerToken),
     },
     selectedCookie: cookieToken ? 'present' : 'absent',

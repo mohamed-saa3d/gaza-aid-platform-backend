@@ -94,13 +94,13 @@ export const adminService = {
     return {
       accessToken: signToken({
         id: admin.id,
-        role: 'ADMIN',
+        role: admin.role,
         email: admin.email,
         isAdmin: true,
       }),
       refreshToken: signRefreshToken({
         id: admin.id,
-        role: 'ADMIN',
+        role: admin.role,
         email: admin.email,
         isAdmin: true,
         sessionId: crypto.randomUUID(),

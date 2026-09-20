@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
-import { Prisma, Role } from '@prisma/client';
+import { Prisma, Role, AdminRole } from '@prisma/client';
 import { prisma } from '../../shared/database/prisma';
 import { AppError } from '../../shared/errors/app-error';
 import { isPrismaKnownRequestError } from '../../shared/utils/prisma-error';
@@ -181,56 +181,6 @@ export const authService = {
       where: { email },
     });
 
-    const admin = user
-      ? null
-      : await prisma.admin.findUnique({
-          where: { email },
-        });
-
-    if (!user && !admin) {
-      throw new AppError('Invalid email or password', 401);
-    }
-
-    if (admin) {
-      if (admin.deletedAt || !admin.isActive) {
-        throw new AppError('Admin account is inactive', 403);
-      }
-
-      const isPasswordValid = await bcrypt.compare(input.password, admin.passwordHash);
-
-      if (!isPasswordValid) {
-        throw new AppError('Invalid email or password', 401);
-      }
-
-      const accessToken = signToken({
-        id: admin.id,
-        role: admin.role,
-        email: admin.email,
-        isAdmin: true,
-      });
-      const refreshToken = signRefreshToken({
-        id: admin.id,
-        role: admin.role,
-        email: admin.email,
-        isAdmin: true,
-        sessionId: crypto.randomUUID(),
-      });
-
-      return {
-        accessToken,
-        refreshToken,
-        user: {
-          id: admin.id,
-          name: admin.name,
-          email: admin.email,
-          avatar: null,
-          role: admin.role,
-          createdAt: admin.createdAt,
-          updatedAt: admin.updatedAt,
-        },
-      };
-    }
-
     if (!user) {
       throw new AppError('Invalid email or password', 401);
     }
@@ -268,32 +218,11 @@ export const authService = {
     };
   },
 
-  async refreshAccessToken(refreshToken: string) {
+  async refreshUserAccessToken(refreshToken: string) {
     const payload = verifyRefreshToken(refreshToken);
 
-    if (!payload.sessionId) {
+    if (payload.isAdmin === true || !payload.sessionId) {
       throw new AppError('Refresh token is invalid or expired', 401);
-    }
-
-    if (payload.isAdmin) {
-      const nextSessionId = crypto.randomUUID();
-      const nextRefreshToken = signRefreshToken({
-        id: payload.id,
-        role: payload.role,
-        email: payload.email,
-        isAdmin: true,
-        sessionId: nextSessionId,
-      });
-
-      return {
-        accessToken: signToken({
-          id: payload.id,
-          role: payload.role,
-          email: payload.email,
-          isAdmin: true,
-        }),
-        refreshToken: nextRefreshToken,
-      };
     }
 
     try {
@@ -314,6 +243,7 @@ export const authService = {
       if (
         !session ||
         session.id !== payload.sessionId ||
+        session.userId !== payload.id ||
         session.revokedAt ||
         session.expiresAt <= new Date()
       ) {
@@ -367,6 +297,7 @@ export const authService = {
           role: user.role,
         }),
         refreshToken: nextRefreshToken,
+        role: user.role,
       };
     } catch (error) {
       if (error instanceof AppError) {
@@ -375,6 +306,38 @@ export const authService = {
 
       throw new AppError('Unable to refresh session. Please log in again.', 401);
     }
+  },
+
+  async refreshAdminAccessToken(refreshToken: string) {
+    const payload = verifyRefreshToken(refreshToken);
+
+    if (
+      payload.isAdmin !== true ||
+      !payload.sessionId ||
+      (payload.role !== AdminRole.ADMIN && payload.role !== AdminRole.SUPER_ADMIN)
+    ) {
+      throw new AppError('Refresh token is invalid or expired', 401);
+    }
+
+    const nextSessionId = crypto.randomUUID();
+    const nextRefreshToken = signRefreshToken({
+      id: payload.id,
+      role: payload.role,
+      email: payload.email,
+      isAdmin: true,
+      sessionId: nextSessionId,
+    });
+
+    return {
+      accessToken: signToken({
+        id: payload.id,
+        role: payload.role,
+        email: payload.email,
+        isAdmin: true,
+      }),
+      refreshToken: nextRefreshToken,
+      role: payload.role,
+    };
   },
 
   async revokeRefreshToken(refreshToken: string) {

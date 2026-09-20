@@ -19,8 +19,8 @@ export const swaggerSpec = swaggerJsdoc({
         cookieAuth: {
           type: 'apiKey',
           in: 'cookie',
-          name: 'refreshToken',
-          description: 'HTTP-only refresh token cookie used for refresh/logout operations.',
+          name: 'userRefreshToken',
+          description: 'HTTP-only user refresh token cookie used for user refresh/logout operations.',
         },
       },
       schemas: {

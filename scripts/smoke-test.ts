@@ -162,7 +162,7 @@ const main = async () => {
       'Expected persisted refresh session to be unexpired',
     );
 
-    const refreshResponse = await fetch(`${baseUrl}/api/auth/refresh`, {
+    const refreshResponse = await fetch(`${baseUrl}/api/auth/user/refresh`, {
       method: 'POST',
       headers: { cookie: firstRefreshCookie, origin: browserOrigin },
       body: '{}',
@@ -170,20 +170,20 @@ const main = async () => {
     await expectStatus(refreshResponse, [200], 'refresh rotation');
     rotatedRefreshCookie = getCookie(refreshResponse, 'userRefreshToken');
 
-    const oldTokenResponse = await fetch(`${baseUrl}/api/auth/refresh`, {
+    const oldTokenResponse = await fetch(`${baseUrl}/api/auth/user/refresh`, {
       method: 'POST',
       headers: { cookie: firstRefreshCookie, origin: browserOrigin },
       body: '{}',
     });
     await expectStatus(oldTokenResponse, [401], 'revoked old refresh token');
 
-    const logoutResponse = await fetch(`${baseUrl}/api/auth/logout`, {
+    const logoutResponse = await fetch(`${baseUrl}/api/auth/user/logout`, {
       method: 'POST',
       headers: { cookie: rotatedRefreshCookie, origin: browserOrigin },
     });
-    await expectStatus(logoutResponse, [204], 'logout');
+    await expectStatus(logoutResponse, [200], 'logout');
 
-    const revokedTokenResponse = await fetch(`${baseUrl}/api/auth/refresh`, {
+    const revokedTokenResponse = await fetch(`${baseUrl}/api/auth/user/refresh`, {
       method: 'POST',
       headers: { cookie: rotatedRefreshCookie, origin: browserOrigin },
       body: '{}',
