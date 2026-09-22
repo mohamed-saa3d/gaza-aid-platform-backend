@@ -19,8 +19,8 @@ import {
 export const projectsRoutes = Router();
 
 projectsRoutes.get('/stats', getProjectStats);
-projectsRoutes.get('/', useCache('projects', 3600), getProjects);
-projectsRoutes.get('/:id', useCache('projects', 3600), getProject);
+projectsRoutes.get('/', useCache('projects', 60), getProjects);
+projectsRoutes.get('/:id', useCache('projects', 60), getProject);
 projectsRoutes.post('/', requireAdmin, uploadSingleImage('image'), validateRequest(createProjectSchema), createProject);
 projectsRoutes.put('/:id', requireAdmin, uploadSingleImage('image'), validateRequest(updateProjectSchema), updateProject);
 projectsRoutes.delete('/:id', requireAdmin, deleteProject);

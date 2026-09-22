@@ -4,7 +4,8 @@ import logger from '../utils/logger';
 export const redisService = {
   async clearCache(...prefixes: string[]) {
     if (!redisClient.isReady) {
-      throw new Error('Redis is not ready; cache invalidation was not performed.');
+      logger.warn('[Redis] Client not ready; cache invalidation skipped.');
+      return;
     }
 
     const patterns = prefixes.flatMap((prefix) => {

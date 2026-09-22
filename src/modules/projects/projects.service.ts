@@ -18,6 +18,10 @@ const withBeneficiariesCount = <T extends { beneficiariesCount?: number | null }
   beneficiariesCount: project.beneficiariesCount ?? 0,
 });
 
+const notDeletedFilter = {
+  OR: [{ deletedAt: null }, { deletedAt: { isSet: false } }],
+};
+
 export const projectsService = {
   async getProjects(
     page = 1,
@@ -25,7 +29,7 @@ export const projectsService = {
     status?: ProjectStatus | 'ALL',
   ) {
     const where = {
-      deletedAt: null,
+      ...notDeletedFilter,
       ...(status && status !== 'ALL' ? { status } : {}),
     };
 
@@ -53,7 +57,7 @@ export const projectsService = {
 
   async getProjectById(id: string) {
     const project = await prisma.project.findFirst({
-      where: { id, deletedAt: null },
+      where: { id, ...notDeletedFilter },
       select: projectSelect,
     });
 

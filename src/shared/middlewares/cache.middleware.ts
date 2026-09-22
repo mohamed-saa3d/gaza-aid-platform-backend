@@ -9,7 +9,7 @@ export const useCache = (prefix: string, ttlSeconds: number): RequestHandler => 
     const key = `${prefix}:${req.originalUrl}`;
 
     try {
-      if (!redisClient || !redisClient.isOpen) {
+      if (!redisClient || !redisClient.isReady) {
         return next();
       }
 
@@ -45,7 +45,7 @@ export const useCache = (prefix: string, ttlSeconds: number): RequestHandler => 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       res.json = (body: any) => {
         try {
-          if (redisClient && redisClient.isOpen) {
+          if (redisClient && redisClient.isReady) {
             // fire-and-forget so we don't block the response
             // @ts-ignore - setEx returns a promise
             redisClient
