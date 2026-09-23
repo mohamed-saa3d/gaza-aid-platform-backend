@@ -194,6 +194,21 @@ export const getProjectStats: RequestHandler = async (_req, res, next) => {
   }
 };
 
+export const getProjectHistory: RequestHandler = async (req, res, next) => {
+  try {
+    const months = toNumber(req.query.months, 12);
+    const history = await projectsService.getProjectHistory(months);
+
+    res.status(200).json({
+      success: true,
+      message: 'Project history fetched successfully',
+      data: history,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 /**
  * Categories that still own live projects, for the public filter bar.
  * Deliberately public: it only exposes id + localized names of categories that

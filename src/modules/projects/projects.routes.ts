@@ -8,6 +8,7 @@ import {
   deleteProject,
   getProject,
   getProjectCategories,
+  getProjectHistory,
   getProjectStats,
   getProjects,
   updateProject,
@@ -20,6 +21,7 @@ import {
 export const projectsRoutes = Router();
 
 projectsRoutes.get('/stats', getProjectStats);
+projectsRoutes.get('/history', useCache('projects', 300), getProjectHistory);
 projectsRoutes.get('/categories', useCache('projects', 60), getProjectCategories);
 projectsRoutes.get('/', useCache('projects', 60), getProjects);
 projectsRoutes.get('/:id', useCache('projects', 60), getProject);

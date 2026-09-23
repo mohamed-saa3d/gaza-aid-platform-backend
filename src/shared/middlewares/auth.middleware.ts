@@ -155,3 +155,29 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction): v
     next();
   }, 'admin');
 };
+
+/**
+ * Attaches `req.user` when a valid session is present, but NEVER rejects.
+ *
+ * Used by endpoints that both guests and authenticated users may call (e.g.
+ * submitting a platform rating): the identity is used to attribute the action
+ * when available, and the guest-identity cookie is the fallback. A malformed or
+ * expired token is treated as "not logged in" rather than an error, so an
+ * expired admin cookie can never break anonymous public interaction.
+ */
+export const optionalAuth = (req: Request, _res: Response, next: NextFunction): void => {
+  const token = getAccessToken(req, 'user') ?? getAccessToken(req, 'admin');
+
+  if (!token) {
+    next();
+    return;
+  }
+
+  try {
+    req.user = verifyToken(token);
+  } catch {
+    // Intentionally ignored: absence of a valid session is not an error here.
+  }
+
+  next();
+};

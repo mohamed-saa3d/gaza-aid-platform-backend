@@ -230,6 +230,21 @@ export const sensitiveOpsLimiter = createLimiter({
   useRedis: false,
 });
 
+/**
+ * Platform-rating submissions.
+ *
+ * Generous enough for a legitimate visitor changing their mind, tight enough that
+ * a script cannot inflate the aggregate. Keyed per visitor (see
+ * `visitorIdentityMiddleware`), so one abusive client cannot exhaust the budget
+ * for everyone else behind the same NAT/proxy.
+ */
+export const ratingSubmitLimiter = createLimiter({
+  group: 'rating-submit',
+  windowMs: 10 * 60 * 1000,
+  max: 12,
+  message: 'Too many rating submissions, please try again later.',
+});
+
 export const createAdminLimiter = createLimiter({
   group: 'admin-create',
   windowMs: 15 * 60 * 1000,

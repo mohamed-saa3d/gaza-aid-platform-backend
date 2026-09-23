@@ -10,6 +10,10 @@ const categoryFields = {
   nameEn: z.string().trim().min(2, 'English category name is required').max(120),
   descriptionAr: z.string().trim().min(2, 'Arabic category description is required').max(1000).optional(),
   descriptionEn: z.string().trim().min(2, 'English category description is required').max(1000).optional(),
+  // Constrained to a safe identifier so an icon key can never be used as a path
+  // or injected anywhere — the frontend maps it to a component from a fixed set.
+  icon: z.string().trim().regex(/^[A-Za-z][A-Za-z0-9]{1,40}$/, 'Invalid icon key').optional(),
+  order: z.coerce.number().int().min(0).max(9999).optional(),
 };
 
 export const categoriesQuerySchema = z.object({

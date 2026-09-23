@@ -4,9 +4,18 @@ model Category {
   nameEn    String   @unique
   descriptionAr String?
   descriptionEn String?
+  // Icon key rendered by the frontend category strip (e.g. "Droplets").
+  // A plain string key, not an enum: the frontend owns the icon map, so adding a
+  // new icon never requires a database migration.
+  icon      String   @default("LayoutGrid")
+  // Display order. Default categories keep their intended order (0-5) even after
+  // an admin renames them, because identity is the id and the order is stored.
+  order     Int      @default(100)
   createdAt DateTime @default(now())
 
   projects Project[]
+
+  @@index([order])
 }
 
 model Project {

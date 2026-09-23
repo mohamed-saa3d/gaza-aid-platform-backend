@@ -7,11 +7,15 @@ import {
   updateSettings,
   uploadSiteLogo,
 } from './settings.controller';
-import { useCache } from '../../shared/middlewares/cache.middleware';
 import { updateSettingsSchema } from './settings.validation';
 
 export const settingsRoutes = Router();
 
-settingsRoutes.get('/', useCache('settings', 3600), getSettings);
+// Deliberately NOT cached. Settings drive the public site name (static), logo
+// and contact details — the values an Admin edits and immediately expects to see
+// publicly. A TTL cache here only ever risked serving a stale logo/phone to
+// visitors after a save, so the single lightweight query runs per request
+// instead. Cache invalidation is therefore not a correctness concern for settings.
+settingsRoutes.get('/', getSettings);
 settingsRoutes.put('/', requireAdmin, validateRequest(updateSettingsSchema), updateSettings);
 settingsRoutes.post('/logo', requireAdmin, uploadSingleImage('logo'), uploadSiteLogo);

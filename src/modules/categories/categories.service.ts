@@ -47,7 +47,10 @@ export const categoriesService = {
       prisma.category.count({ where }),
       prisma.category.findMany({
         where,
-        orderBy: { nameEn: 'asc' },
+        // Default categories carry an explicit `order` (0-5) so the Admin's
+        // intended order is preserved even if a default category is renamed.
+        // Alphabetical sorting is only the tiebreaker for equal orders.
+        orderBy: [{ order: 'asc' }, { nameEn: 'asc' }],
         skip: (page - 1) * limit,
         take: limit,
       }),
@@ -79,6 +82,8 @@ export const categoriesService = {
           nameEn: data.nameEn.trim(),
           ...(data.descriptionAr !== undefined ? { descriptionAr: data.descriptionAr.trim() } : {}),
           ...(data.descriptionEn !== undefined ? { descriptionEn: data.descriptionEn.trim() } : {}),
+          ...(data.icon ? { icon: data.icon } : {}),
+          ...(data.order !== undefined ? { order: data.order } : {}),
         },
       });
     } catch (error) {
@@ -99,6 +104,8 @@ export const categoriesService = {
           ...(data.nameEn !== undefined ? { nameEn: data.nameEn.trim() } : {}),
           ...(data.descriptionAr !== undefined ? { descriptionAr: data.descriptionAr.trim() } : {}),
           ...(data.descriptionEn !== undefined ? { descriptionEn: data.descriptionEn.trim() } : {}),
+          ...(data.icon !== undefined ? { icon: data.icon } : {}),
+          ...(data.order !== undefined ? { order: data.order } : {}),
         },
       });
     } catch (error) {

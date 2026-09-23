@@ -2,8 +2,20 @@ model PlatformRating {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   value     Int
   comment   String?
-  userId    String   @unique @db.ObjectId
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Set for authenticated ratings, null for guest ratings.
+  //
+  // Deliberately NOT `@unique` any more: uniqueness per user is enforced by the
+  // `@unique` on this field, which MongoDB treats as a partial unique index (it
+  // only indexes documents where the field exists). That lets many guest rows
+  // coexist with `userId: null` while still allowing at most one rating per
+  // authenticated user.
+  userId    String?  @unique @db.ObjectId
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // SHA-256 hash of a server-issued visitor cookie - never raw PII, never the
+  // cookie value itself. Used only to stop one guest rating repeatedly.
+  guestKey  String?  @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
 }

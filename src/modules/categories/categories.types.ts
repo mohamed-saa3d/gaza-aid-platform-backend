@@ -3,6 +3,10 @@ export type CreateCategoryInput = {
   nameEn: string;
   descriptionAr?: string;
   descriptionEn?: string;
+  /** Icon key for the frontend icon registry. Defaults to a generic grid icon. */
+  icon?: string;
+  /** Display order; lower sorts first. Defaults to 100 (i.e. after defaults). */
+  order?: number;
 };
 
 export type UpdateCategoryInput = Partial<CreateCategoryInput>;

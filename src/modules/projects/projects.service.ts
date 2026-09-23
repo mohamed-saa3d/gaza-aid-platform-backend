@@ -120,14 +120,82 @@ export const projectsService = {
   async getPopulatedCategories(locale: ContentLocale = 'ar') {
     const categories = await prisma.category.findMany({
       where: { projects: { some: notDeletedFilter } },
-      orderBy: { nameEn: 'asc' },
-      select: { id: true, nameAr: true, nameEn: true },
+      // Default categories first (order 0-5), then the rest; `nameEn` breaks ties.
+      orderBy: [{ order: 'asc' }, { nameEn: 'asc' }],
+      select: { id: true, nameAr: true, nameEn: true, icon: true, order: true },
     });
 
     return categories.map((category) => ({
       ...category,
       name: pickLocalized(locale, category.nameAr, category.nameEn),
     }));
+  },
+
+  /**
+   * Monthly project creation/completion history, derived from the real
+   * `createdAt`/`updatedAt` timestamps in the Project collection.
+   *
+   * Returns the last `months` buckets ending with the current month, each with a
+   * running `total` (projects existing by then) and `completed` (of those, the
+   * ones now completed). Months with no activity are included as zeros so the
+   * chart plots a continuous timeline instead of skipping gaps.
+   */
+  async getProjectHistory(months = 12) {
+    const safeMonths = Math.min(Math.max(months, 1), 24);
+    const now = new Date();
+
+    // Month buckets, oldest first.
+    const buckets: Array<{ key: string; label: string; start: Date; end: Date }> = [];
+    for (let offset = safeMonths - 1; offset >= 0; offset -= 1) {
+      const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - offset, 1));
+      const end = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 1));
+      buckets.push({
+        key: `${start.getUTCFullYear()}-${String(start.getUTCMonth() + 1).padStart(2, '0')}`,
+        label: start.toISOString().slice(0, 7),
+        start,
+        end,
+      });
+    }
+
+    const earliest = buckets[0].start;
+
+    // One query for every project in range; aggregation happens in memory so the
+    // result is a genuine cumulative series rather than a per-month snapshot.
+    const projects = await prisma.project.findMany({
+      where: { ...notDeletedFilter, createdAt: { gte: earliest } },
+      select: { createdAt: true, status: true },
+    });
+
+    // Baseline: projects that existed before the window, so the running total is
+    // correct rather than restarting at zero.
+    const baselineTotal = await prisma.project.count({
+      where: { ...notDeletedFilter, createdAt: { lt: earliest } },
+    });
+    const baselineCompleted = await prisma.project.count({
+      where: {
+        ...notDeletedFilter,
+        createdAt: { lt: earliest },
+        status: ProjectStatus.COMPLETED,
+      },
+    });
+
+    let runningTotal = baselineTotal;
+    let runningCompleted = baselineCompleted;
+
+    return buckets.map((bucket) => {
+      const inMonth = projects.filter(
+        (project) => project.createdAt >= bucket.start && project.createdAt < bucket.end,
+      );
+
+      runningTotal += inMonth.length;
+      runningCompleted += inMonth.filter((p) => p.status === ProjectStatus.COMPLETED).length;
+
+      return {
+        month: bucket.label,
+        total: runningTotal,
+        completed: runningCompleted,
+      };
+    });
   },
 
   async getProjectStats() {

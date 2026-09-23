@@ -21,6 +21,7 @@ import { ratingsRoutes } from './modules/ratings/ratings.routes';
 import { settingsRoutes } from './modules/settings/settings.routes';
 import { requestLoggerMiddleware } from './shared/middlewares/request-logger.middleware';
 import { localeMiddleware } from './shared/middlewares/locale.middleware';
+import { visitorIdentityMiddleware } from './shared/middlewares/visitor-identity.middleware';
 import { globalRateLimiter } from './shared/middlewares/rate-limiter.middleware';
 import { errorMiddleware } from './shared/errors/error.middleware';
 
@@ -77,6 +78,9 @@ app.use(requestLoggerMiddleware);
 // Resolves the validated content locale for every request (query -> header ->
 // Accept-Language -> Arabic default). Public localized responses use `req.locale`.
 app.use(localeMiddleware);
+// Establishes a hashed, non-PII visitor identity (server-issued httpOnly cookie)
+// so guests can rate the platform without an account. Never blocks a request.
+app.use(visitorIdentityMiddleware);
 // Auth routes are exempt here and guarded by their own dedicated limiters
 // (loginLimiter / registerLimiter / otpLimiter) inside authRoutes.
 app.use((req, res, next) => {
