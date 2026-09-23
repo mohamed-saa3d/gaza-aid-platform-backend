@@ -1,7 +1,9 @@
 model PlatformSettings {
   id              String  @id @default(auto()) @map("_id") @db.ObjectId
-  siteNameAr      String
-  siteNameEn      String
+  // NOTE: siteNameAr/siteNameEn were removed. The site name is no longer
+  // database-controlled — it is fixed, localized frontend branding. Any existing
+  // documents may still physically store those keys; Prisma simply no longer
+  // reads or writes them, so nothing is lost or corrupted.
   aboutUsTextAr   String
   aboutUsTextEn   String
   logoUrl         String?

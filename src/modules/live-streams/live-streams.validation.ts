@@ -24,13 +24,13 @@ const liveStreamBase = {
 export const createLiveStreamSchema = z.object({
   body: z.object({
     ...liveStreamBase,
-  }),
+  }).strict(),
 });
 
 export const updateLiveStreamSchema = z.object({
   body: z.object({
     ...liveStreamBase,
-  }).partial().refine((data) => Object.keys(data).length > 0, {
+  }).partial().strict().refine((data) => Object.keys(data).length > 0, {
     message: 'At least one field must be provided',
   }),
 });

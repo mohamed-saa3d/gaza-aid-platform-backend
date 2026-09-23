@@ -850,7 +850,7 @@
           "content": {
             "application/json": {
               "example": {
-                "siteNameEn": "Qaza Foundation",
+                "contactPhone": 970000,
                 "contactEmail": "contact@example.com",
                 "totalBeneficiaries": 5000,
                 "yearsOfGiving": 12

@@ -8,13 +8,12 @@ import type { UpdateSettingsInput } from './settings.types';
  * Adds locale-resolved convenience fields on top of the raw AR/EN columns.
  *
  * The raw fields are untouched so the admin dashboard still round-trips exactly
- * what it saved, while `siteName`, `aboutUsText` and `contact*` are ready to
- * render in the language the public visitor selected.
+ * what it saved, while `aboutUsText` is ready to render in the language the
+ * public visitor selected. The site NAME is intentionally absent: it is static,
+ * localized frontend branding (`t.branding.siteName`), not database data.
  */
 const withLocalizedFields = <
   T extends {
-    siteNameAr?: string | null;
-    siteNameEn?: string | null;
     aboutUsTextAr?: string | null;
     aboutUsTextEn?: string | null;
   },
@@ -23,7 +22,6 @@ const withLocalizedFields = <
   locale: ContentLocale,
 ) => ({
   ...settings,
-  siteName: pickLocalized(locale, settings.siteNameAr, settings.siteNameEn),
   aboutUsText: pickLocalized(locale, settings.aboutUsTextAr, settings.aboutUsTextEn),
 });
 
@@ -52,8 +50,6 @@ export const settingsService = {
       return prisma.platformSettings.update({
         where: { id: existing.id },
         data: {
-          ...(input.siteNameAr !== undefined ? { siteNameAr: input.siteNameAr.trim() } : {}),
-          ...(input.siteNameEn !== undefined ? { siteNameEn: input.siteNameEn.trim() } : {}),
           ...(input.aboutUsTextAr !== undefined ? { aboutUsTextAr: input.aboutUsTextAr.trim() } : {}),
           ...(input.aboutUsTextEn !== undefined ? { aboutUsTextEn: input.aboutUsTextEn.trim() } : {}),
           ...(input.logoUrl !== undefined ? { logoUrl: input.logoUrl || null } : {}),

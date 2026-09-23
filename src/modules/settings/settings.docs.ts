@@ -15,7 +15,7 @@
  *       required: true
  *       content:
  *         application/json:
- *           example: { siteNameEn: Qaza Foundation, contactEmail: contact@example.com, totalBeneficiaries: 5000, yearsOfGiving: 12 }
+ *           example: { contactPhone: +970000, contactEmail: contact@example.com, totalBeneficiaries: 5000, yearsOfGiving: 12 }
  *     responses:
  *       200: { description: Settings updated successfully }
  *       400: { description: Invalid settings data or empty update body }

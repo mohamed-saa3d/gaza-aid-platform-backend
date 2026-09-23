@@ -2,8 +2,6 @@ import { z } from 'zod';
 
 export const updateSettingsSchema = z.object({
   body: z.object({
-    siteNameAr: z.string().trim().min(2).optional(),
-    siteNameEn: z.string().trim().min(2).optional(),
     aboutUsTextAr: z.string().trim().min(10).optional(),
     aboutUsTextEn: z.string().trim().min(10).optional(),
     logoUrl: z.string().trim().url('Invalid logo URL').optional(),
@@ -13,7 +11,7 @@ export const updateSettingsSchema = z.object({
     totalBeneficiaries: z.number().int().nonnegative().optional(),
     foodBaskets: z.number().int().nonnegative().optional(),
     yearsOfGiving: z.number().int().nonnegative().optional(),
-  }).refine((data) => Object.keys(data).length > 0, {
+  }).strict().refine((data) => Object.keys(data).length > 0, {
     message: 'At least one field must be provided',
   }),
 });

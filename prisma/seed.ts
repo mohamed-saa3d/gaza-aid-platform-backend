@@ -45,9 +45,8 @@ async function main() {
   console.log(`Root Admin created/updated: ${rootAdmin.email}`);
 
   // 2. تحديث الإعدادات 
+  // ملاحظة: اسم الموقع لم يعد ضمن الإعدادات — أصبح نصاً ثابتاً مترجماً في الواجهة.
   const settingsData = {
-    siteNameAr: 'منصة قضاء',
-    siteNameEn: 'Qaza Platform',
     aboutUsTextAr: 'منصة خيرية لدعم المشاريع الإنسانية.',
     aboutUsTextEn: 'A charity platform supporting humanitarian projects.',
     contactEmail: 'contact@qaza.org',
@@ -64,7 +63,7 @@ async function main() {
       ...settingsData
     },
   });
-  console.log(`System settings initialized/updated: ${settings.siteNameEn}`);
+  console.log(`System settings initialized/updated: ${settings.id}`);
 
   // 3. الأقسام (باستخدام Promise.all للأداء العالي)
   const categories = [

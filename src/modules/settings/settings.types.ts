@@ -1,6 +1,4 @@
 export type UpdateSettingsInput = {
-  siteNameAr?: string;
-  siteNameEn?: string;
   aboutUsTextAr?: string;
   aboutUsTextEn?: string;
   logoUrl?: string | null;
