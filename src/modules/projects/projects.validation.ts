@@ -17,6 +17,11 @@ export const createProjectSchema = z.object({
     collectedAmount: z.coerce.number().nonnegative('Collected amount must be non-negative').optional(),
     beneficiariesCount: z.coerce.number().int().nonnegative().optional(),
     status: z.nativeEnum(ProjectStatus),
+    /**
+     * Required on create. `categoryId` is nullable in the database ONLY so that
+     * deleting a category can unassign its projects without deleting them; every
+     * project still has to be created against a real, existing category.
+     */
     categoryId: mongoObjectIdSchema,
   }).strict(),
 });
@@ -32,7 +37,10 @@ export const updateProjectSchema = z.object({
     collectedAmount: z.coerce.number().nonnegative('Collected amount must be non-negative').optional(),
     beneficiariesCount: z.coerce.number().int().nonnegative().optional(),
     status: z.nativeEnum(ProjectStatus).optional(),
-    categoryId: mongoObjectIdSchema.optional(),
+    // Optional on update: omitting it keeps the current category, and an empty
+    // string explicitly unassigns the project (only meaningful for a project
+    // whose category was already deleted).
+    categoryId: z.union([mongoObjectIdSchema, z.literal('')]).optional(),
   }).refine((data) => Object.keys(data).length > 0, {
     message: 'At least one field must be provided',
   }).strict(),

@@ -11,15 +11,29 @@ import redisClient from '../../config/redis.config';
 import logger from '../utils/logger';
 
 class ResilientRedisStore implements Store {
-  private readonly redisStore: Store = new RedisStore({
-    sendCommand: async (...args: string[]) => {
-      if (!redisClient.isReady) {
-        throw new Error('Redis is unavailable');
-      }
+  /**
+   * Every limiter gets its own Redis key namespace.
+   *
+   * `rate-limit-redis` defaults every instance to the shared `rl:` prefix and the
+   * Redis keys are namespaced by window*length*, not by limiter instance. Two
+   * limiters sharing that prefix therefore overwrite each other's TTL: an earlier
+   * 15-minute bucket was being deleted outright by any limiter whose window was
+   * shorter. A per-limiter prefix keeps the budgets completely independent.
+   */
+  private readonly redisStore: Store;
 
-      return redisClient.sendCommand(args);
-    },
-  });
+  constructor(prefix: string) {
+    this.redisStore = new RedisStore({
+      prefix,
+      sendCommand: async (...args: string[]) => {
+        if (!redisClient.isReady) {
+          throw new Error('Redis is unavailable');
+        }
+
+        return redisClient.sendCommand(args);
+      },
+    });
+  }
 
   private readonly memoryStore = new MemoryStore();
 
@@ -84,41 +98,101 @@ class ResilientRedisStore implements Store {
 
 const developmentMultiplier = 1;
 
+type LimiterKind = 'read' | 'write';
+
 const createLimiter = ({
   group,
   windowMs,
   max,
   message,
   useRedis = true,
+  kind = 'write',
 }: {
   group: string;
   windowMs: number;
   max: number;
   message: string;
   useRedis?: boolean;
+  /**
+   * `read` buckets every safe (GET/HEAD/OPTIONS) request from one client IP,
+   * `write` buckets only state-changing methods. Splitting the two is the whole
+   * point: an anonymous visitor browsing the site only ever spends read budget,
+   * so normal navigation can never exhaust the budget that protects mutations.
+   */
+  kind?: LimiterKind;
 }) =>
   rateLimit({
     windowMs,
     max: max * developmentMultiplier,
     standardHeaders: true,
     legacyHeaders: false,
+    // Only count the requests this limiter is responsible for. Returning
+    // `undefined` makes express-rate-limit skip the request entirely instead of
+    // consuming budget, which is what keeps read traffic out of the write bucket.
+    skip: (request) => {
+      const isRead = request.method === 'GET' || request.method === 'HEAD' || request.method === 'OPTIONS';
+      return kind === 'read' ? !isRead : isRead;
+    },
     keyGenerator: (request) => {
       const clientIp = ipKeyGenerator(request.ip ?? 'unknown');
-      return `${group}:${request.baseUrl}${request.path}:${clientIp}`;
+      const routeGroup = `${request.method}:${request.baseUrl || '/'}`;
+
+      if (kind === 'read') {
+        return `read:${routeGroup}:${clientIp}`;
+      }
+
+      return `write:${group}:${routeGroup}:${clientIp}`;
     },
     message: {
       success: false,
       message,
     },
-    ...(useRedis ? { store: new ResilientRedisStore() } : {}),
+    ...(useRedis ? { store: new ResilientRedisStore(`rl:${kind}:${group}:`) } : {}),
   });
 
-export const globalRateLimiter = createLimiter({
-  group: 'global',
+/**
+ * Policy applied to every /api/v1 route.
+ *
+ * Read and write are separate buckets with separate budgets:
+ *  - reads get a generous budget (browsing one page already fires several public
+ *    GETs: settings, categories, projects, ...), keyed per method+route so a
+ *    category listing can never exhaust the settings bucket;
+ *  - writes keep a tight budget, because that is what abuse actually looks like.
+ *
+ * Auth routes are exempted in `app.ts` and protected by their own stricter
+ * limiters instead (login/register/otp).
+ */
+export const publicReadLimiter = createLimiter({
+  group: 'public-read',
+  windowMs: env.RATE_LIMIT_WINDOW_MS,
+  max: env.RATE_LIMIT_MAX_READ_REQUESTS,
+  message: 'Too many requests, please try again later.',
+  kind: 'read',
+});
+
+export const mutationLimiter = createLimiter({
+  group: 'mutation',
   windowMs: env.RATE_LIMIT_WINDOW_MS,
   max: env.RATE_LIMIT_MAX_REQUESTS,
   message: 'Too many requests, please try again later.',
+  kind: 'write',
 });
+
+/** Applies both policies; each one only counts the methods it owns. */
+export const globalRateLimiter = (
+  request: Parameters<typeof publicReadLimiter>[0],
+  response: Parameters<typeof publicReadLimiter>[1],
+  next: Parameters<typeof publicReadLimiter>[2],
+): void => {
+  publicReadLimiter(request, response, (readError?: unknown) => {
+    if (readError) {
+      next(readError);
+      return;
+    }
+
+    mutationLimiter(request, response, next);
+  });
+};
 
 export const loginLimiter = createLimiter({
   group: 'login',

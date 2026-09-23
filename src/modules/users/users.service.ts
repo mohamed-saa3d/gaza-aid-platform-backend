@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../shared/database/prisma';
 import { AppError } from '../../shared/errors/app-error';
+import { notSoftDeleted } from '../../shared/utils/soft-delete';
 import { userSelect } from './users.constants';
 import type { ChangePasswordInput, UpdateProfileInput } from './users.types';
 
@@ -28,7 +29,7 @@ export const usersService = {
       };
 
       const updateResult = await prisma.user.updateMany({
-        where: { id: input.userId, deletedAt: null },
+        where: { id: input.userId, ...notSoftDeleted },
         data: updateData,
       });
 
@@ -47,7 +48,7 @@ export const usersService = {
 
   async updateAvatar(userId: string, avatarUrl: string) {
     const updateResult = await prisma.user.updateMany({
-      where: { id: userId, deletedAt: null },
+      where: { id: userId, ...notSoftDeleted },
       data: { avatar: avatarUrl },
     });
 
@@ -80,7 +81,7 @@ export const usersService = {
     const passwordHash = await bcrypt.hash(input.newPassword, 12);
 
     const updateResult = await prisma.user.updateMany({
-      where: { id: input.userId, deletedAt: null },
+      where: { id: input.userId, ...notSoftDeleted },
       data: { password: passwordHash },
     });
 
@@ -96,7 +97,7 @@ export const usersService = {
 
   async softDeleteAccount(userId: string) {
     const updateResult = await prisma.user.updateMany({
-      where: { id: userId, deletedAt: null },
+      where: { id: userId, ...notSoftDeleted },
       data: { deletedAt: new Date() },
     });
 
@@ -112,7 +113,7 @@ export const usersService = {
 
   async getAllUsers(page: number, limit: number) {
     return prisma.user.findMany({
-      where: { deletedAt: null },
+      where: notSoftDeleted,
       select: userSelect,
       orderBy: { createdAt: 'desc' },
       skip: (Math.max(page, 1) - 1) * Math.max(limit, 1),

@@ -19,7 +19,7 @@ export const getAllCategories: RequestHandler = async (req, res, next) => {
     const page = parsePage(req.query.page, DEFAULT_CATEGORIES_PAGE);
     const limit = parseLimit(req.query.limit, DEFAULT_CATEGORIES_LIMIT);
     const search = typeof req.query.search === 'string' ? req.query.search.trim() : undefined;
-    const result = await categoriesService.getCategories({ page, limit, search });
+    const result = await categoriesService.getCategories({ page, limit, search }, req.locale);
 
     res.status(200).json({
       success: true,
@@ -41,7 +41,7 @@ export const getCategories = getAllCategories;
 
 export const getCategory: RequestHandler = async (req, res, next) => {
   try {
-    const category = await categoriesService.getCategoryById(req.params.id as string);
+    const category = await categoriesService.getCategoryById(req.params.id as string, req.locale);
 
     res.status(200).json({
       success: true,
@@ -92,14 +92,48 @@ export const updateCategory: RequestHandler = async (req, res, next) => {
 
 export const deleteCategory: RequestHandler = async (req, res, next) => {
   try {
-    await categoriesService.deleteCategory(req.params.id as string);
+    const body = (req.body ?? {}) as { confirmUnassignProjects?: boolean };
+    const result = await categoriesService.deleteCategory(req.params.id as string, {
+      confirmUnassignProjects: body.confirmUnassignProjects === true,
+    });
+
+    // First attempt on a category that still owns projects: nothing was written.
+    if (result.status === 'confirmation_required') {
+      res.status(409).json({
+        success: false,
+        code: result.code,
+        message:
+          `This category is linked to ${result.linkedProjectCount} project(s). ` +
+          'Deleting it will not delete those projects, but they will become uncategorized.',
+        data: {
+          categoryId: result.categoryId,
+          categoryName: result.categoryName,
+          linkedProjectCount: result.linkedProjectCount,
+          confirmationRequired: true,
+        },
+      });
+      return;
+    }
+
     await redisService.clearCache('categories');
     await invalidateCategoriesCache();
+    // The deleted category's projects were re-assigned, so cached project
+    // listings/details no longer match the database.
+    if (result.unassignedProjectCount > 0) {
+      try {
+        await redisService.clearCachePattern('projects*');
+      } catch (error) {
+        logger.error('[Redis] Failed to invalidate projects cache after category delete', error);
+      }
+    }
 
     res.status(200).json({
       success: true,
       message: 'Category deleted successfully',
-      data: { id: req.params.id },
+      data: {
+        id: result.categoryId,
+        unassignedProjectCount: result.unassignedProjectCount,
+      },
     });
   } catch (error) {
     next(error);

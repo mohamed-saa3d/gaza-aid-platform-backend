@@ -4,10 +4,28 @@ import { AppError } from '../../shared/errors/app-error';
 import { isPrismaKnownRequestError } from '../../shared/utils/prisma-error';
 import { newsSelect } from './news.constants';
 import { cloudinaryService } from '../../shared/services/cloudinary.service';
+import { pickLocalized, type ContentLocale } from '../../shared/middlewares/locale.middleware';
 import type { CreateNewsInput, UpdateNewsInput } from './news.types';
 
+/** Adds locale-resolved `title`/`description` alongside the raw AR/EN fields. */
+const withLocalizedFields = <
+  T extends {
+    titleAr?: string | null;
+    titleEn?: string | null;
+    descriptionAr?: string | null;
+    descriptionEn?: string | null;
+  },
+>(
+  item: T,
+  locale: ContentLocale,
+) => ({
+  ...item,
+  title: pickLocalized(locale, item.titleAr, item.titleEn),
+  description: pickLocalized(locale, item.descriptionAr, item.descriptionEn),
+});
+
 export const newsService = {
-  async getNewsList(page = 1, limit = 10) {
+  async getNewsList(page = 1, limit = 10, locale: ContentLocale = 'ar') {
     const [total, news] = await Promise.all([
       prisma.news.count(),
       prisma.news.findMany({
@@ -18,10 +36,10 @@ export const newsService = {
       }),
     ]);
 
-    return { data: news, total, page, limit };
+    return { data: news.map((item) => withLocalizedFields(item, locale)), total, page, limit };
   },
 
-  async getNewsById(id: string) {
+  async getNewsById(id: string, locale: ContentLocale = 'ar') {
     const news = await prisma.news.findUnique({
       where: { id },
       select: newsSelect,
@@ -31,7 +49,7 @@ export const newsService = {
       throw new AppError('News item was not found', 404);
     }
 
-    return news;
+    return withLocalizedFields(news, locale);
   },
 
   async createNews(input: CreateNewsInput) {

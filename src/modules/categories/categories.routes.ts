@@ -6,6 +6,7 @@ import {
   categoryIdParamSchema,
   categoriesQuerySchema,
   createCategorySchema,
+  deleteCategorySchema,
   updateCategorySchema,
 } from './categories.validation';
 import {
@@ -41,6 +42,6 @@ categoriesRoutes.put(
 categoriesRoutes.delete(
   '/:id',
   requireAdmin,
-  validateRequest(categoryIdParamSchema),
+  validateRequest(deleteCategorySchema),
   deleteCategory,
 );

@@ -20,6 +20,7 @@ import { subscriberRoutes } from './modules/subscribers/subscribers.routes';
 import { ratingsRoutes } from './modules/ratings/ratings.routes';
 import { settingsRoutes } from './modules/settings/settings.routes';
 import { requestLoggerMiddleware } from './shared/middlewares/request-logger.middleware';
+import { localeMiddleware } from './shared/middlewares/locale.middleware';
 import { globalRateLimiter } from './shared/middlewares/rate-limiter.middleware';
 import { errorMiddleware } from './shared/errors/error.middleware';
 
@@ -73,12 +74,20 @@ app.use(
 );
 app.use(cookieParser());
 app.use(requestLoggerMiddleware);
+// Resolves the validated content locale for every request (query -> header ->
+// Accept-Language -> Arabic default). Public localized responses use `req.locale`.
+app.use(localeMiddleware);
+// Auth routes are exempt here and guarded by their own dedicated limiters
+// (loginLimiter / registerLimiter / otpLimiter) inside authRoutes.
 app.use((req, res, next) => {
   if (req.path.startsWith(`${env.API_PREFIX}/auth`)) {
     next();
     return;
   }
 
+  // Applies two independent budgets: a generous one for safe reads and a strict
+  // one for mutations. Each limiter only counts the methods it owns, so public
+  // browsing can never consume (or exhaust) the mutation budget.
   globalRateLimiter(req, res, next);
 });
 

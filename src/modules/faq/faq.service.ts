@@ -3,10 +3,28 @@ import { prisma } from '../../shared/database/prisma';
 import { AppError } from '../../shared/errors/app-error';
 import { isPrismaKnownRequestError } from '../../shared/utils/prisma-error';
 import { faqSelect } from './faq.constants';
+import { pickLocalized, type ContentLocale } from '../../shared/middlewares/locale.middleware';
 import type { CreateFaqInput, UpdateFaqInput } from './faq.types';
 
+/** Adds locale-resolved `question`/`answer` alongside the raw AR/EN fields. */
+const withLocalizedFields = <
+  T extends {
+    questionAr?: string | null;
+    questionEn?: string | null;
+    answerAr?: string | null;
+    answerEn?: string | null;
+  },
+>(
+  faq: T,
+  locale: ContentLocale,
+) => ({
+  ...faq,
+  question: pickLocalized(locale, faq.questionAr, faq.questionEn),
+  answer: pickLocalized(locale, faq.answerAr, faq.answerEn),
+});
+
 export const faqService = {
-  async getFaqs(page = 1, limit = 10) {
+  async getFaqs(page = 1, limit = 10, locale: ContentLocale = 'ar') {
     const where = { isActive: true };
     const [total, faqs] = await Promise.all([
       prisma.fAQ.count({ where }),
@@ -19,10 +37,10 @@ export const faqService = {
       }),
     ]);
 
-    return { data: faqs, total, page, limit };
+    return { data: faqs.map((faq) => withLocalizedFields(faq, locale)), total, page, limit };
   },
 
-  async getFaqById(id: string) {
+  async getFaqById(id: string, locale: ContentLocale = 'ar') {
     const faq = await prisma.fAQ.findUnique({
       where: { id },
       select: faqSelect,
@@ -32,7 +50,7 @@ export const faqService = {
       throw new AppError('FAQ was not found', 404);
     }
 
-    return faq;
+    return withLocalizedFields(faq, locale);
   },
 
   async createFaq(input: CreateFaqInput) {

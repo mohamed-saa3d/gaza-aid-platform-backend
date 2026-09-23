@@ -3,10 +3,20 @@ import { prisma } from '../../shared/database/prisma';
 import { AppError } from '../../shared/errors/app-error';
 import { isPrismaKnownRequestError } from '../../shared/utils/prisma-error';
 import { liveStreamSelect } from './live-streams.constants';
+import { pickLocalized, type ContentLocale } from '../../shared/middlewares/locale.middleware';
 import type { CreateLiveStreamInput, UpdateLiveStreamInput } from './live-streams.types';
 
+/** Adds the locale-resolved `title` alongside the raw AR/EN fields. */
+const withLocalizedFields = <T extends { titleAr?: string | null; titleEn?: string | null }>(
+  stream: T,
+  locale: ContentLocale,
+) => ({
+  ...stream,
+  title: pickLocalized(locale, stream.titleAr, stream.titleEn),
+});
+
 export const liveStreamsService = {
-  async getLiveStreams(page = 1, limit = 10) {
+  async getLiveStreams(page = 1, limit = 10, locale: ContentLocale = 'ar') {
     const where = { isActive: true };
     const [total, liveStreams] = await Promise.all([
       prisma.liveStream.count({ where }),
@@ -19,10 +29,10 @@ export const liveStreamsService = {
       }),
     ]);
 
-    return { data: liveStreams, total, page, limit };
+    return { data: liveStreams.map((stream) => withLocalizedFields(stream, locale)), total, page, limit };
   },
 
-  async getLiveStreamById(id: string) {
+  async getLiveStreamById(id: string, locale: ContentLocale = 'ar') {
     const liveStream = await prisma.liveStream.findUnique({
       where: { id },
       select: liveStreamSelect,
@@ -32,7 +42,7 @@ export const liveStreamsService = {
       throw new AppError('Live stream was not found', 404);
     }
 
-    return liveStream;
+    return withLocalizedFields(liveStream, locale);
   },
 
   async createLiveStream(input: CreateLiveStreamInput) {

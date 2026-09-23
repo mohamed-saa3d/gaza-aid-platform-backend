@@ -7,6 +7,7 @@ import {
   createProject,
   deleteProject,
   getProject,
+  getProjectCategories,
   getProjectStats,
   getProjects,
   updateProject,
@@ -19,6 +20,7 @@ import {
 export const projectsRoutes = Router();
 
 projectsRoutes.get('/stats', getProjectStats);
+projectsRoutes.get('/categories', useCache('projects', 60), getProjectCategories);
 projectsRoutes.get('/', useCache('projects', 60), getProjects);
 projectsRoutes.get('/:id', useCache('projects', 60), getProject);
 projectsRoutes.post('/', requireAdmin, uploadSingleImage('image'), validateRequest(createProjectSchema), createProject);

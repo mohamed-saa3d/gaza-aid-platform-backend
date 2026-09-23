@@ -9,7 +9,7 @@ export const getLiveStreams: RequestHandler = async (req, res, next) => {
   try {
     const page = parsePage(req.query.page, 1);
     const limit = parseLimit(req.query.limit, 10);
-    const result = await liveStreamsService.getLiveStreams(page, limit);
+    const result = await liveStreamsService.getLiveStreams(page, limit, req.locale);
 
     res.status(200).json({
       success: true,
@@ -29,7 +29,7 @@ export const getLiveStream: RequestHandler = async (req, res, next) => {
       throw new AppError('Invalid live stream ID', 400);
     }
 
-    const liveStream = await liveStreamsService.getLiveStreamById(id);
+    const liveStream = await liveStreamsService.getLiveStreamById(id, req.locale);
 
     res.status(200).json({
       success: true,

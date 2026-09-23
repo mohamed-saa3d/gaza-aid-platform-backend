@@ -20,7 +20,7 @@ async function migrateAdmins() {
 
     // البحث عن أي Admin يمتلك صلاحيات قديمة
     const result = await adminsCollection.updateMany(
-      { role: { $in: ['SUPER_ADMIN', 'EDITOR'] } },
+      { role: { $ne: 'ADMIN' } },
       { $set: { role: 'ADMIN' } }
     );
 

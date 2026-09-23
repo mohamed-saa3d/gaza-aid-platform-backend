@@ -60,7 +60,7 @@ export const swaggerSpec = swaggerJsdoc({
         },
         AdminRole: {
           type: 'string',
-          enum: ['SUPER_ADMIN', 'ADMIN'],
+          enum: ['ADMIN'],
           description: 'Administrative role assigned to an administrator account.',
         },
         Admin: {
@@ -167,7 +167,7 @@ export const swaggerSpec = swaggerJsdoc({
           content: {
             'application/json': {
               schema: { $ref: '#/components/schemas/ApiErrorResponse' },
-              example: { success: false, message: 'Forbidden: Super admin access required' },
+              example: { success: false, message: 'Forbidden: Admin access required' },
             },
           },
         },

@@ -35,3 +35,17 @@ export const updateCategorySchema = z.object({
     { message: 'At least one field must be provided' },
   ),
 });
+
+export const deleteCategorySchema = z.object({
+  params: z.object({ id: mongoObjectIdSchema }),
+  body: z
+    .object({
+      /**
+       * Explicit admin acknowledgement that the linked projects will become
+       * uncategorized. The projects themselves are never deleted.
+       */
+      confirmUnassignProjects: z.literal(true),
+    })
+    .strict()
+    .optional(),
+});

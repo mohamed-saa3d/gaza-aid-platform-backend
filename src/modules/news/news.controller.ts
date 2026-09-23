@@ -12,7 +12,7 @@ export const getNewsList: RequestHandler = async (req, res, next) => {
   try {
     const page = parsePage(req.query.page, 1);
     const limit = parseLimit(req.query.limit, 10);
-    const result = await newsService.getNewsList(page, limit);
+    const result = await newsService.getNewsList(page, limit, req.locale);
 
     res.status(200).json({
       success: true,
@@ -32,7 +32,7 @@ export const getNews: RequestHandler = async (req, res, next) => {
       throw new AppError('Invalid news ID', 400);
     }
 
-    const news = await newsService.getNewsById(id);
+    const news = await newsService.getNewsById(id, req.locale);
 
     res.status(200).json({
       success: true,

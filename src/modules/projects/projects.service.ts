@@ -1,8 +1,10 @@
-import { ProjectStatus } from '@prisma/client';
+import { ProjectStatus, type Prisma } from '@prisma/client';
 import { prisma } from '../../shared/database/prisma';
 import { AppError } from '../../shared/errors/app-error';
 import { projectSelect } from './projects.constants';
 import { cloudinaryService } from '../../shared/services/cloudinary.service';
+import { notSoftDeleted } from '../../shared/utils/soft-delete';
+import { pickLocalized, type ContentLocale } from '../../shared/middlewares/locale.middleware';
 import type { CreateProjectInput, UpdateProjectInput } from './projects.types';
 
 const calculateProgressPercentage = (collectedAmount: number, targetAmount: number): number => {
@@ -18,19 +20,51 @@ const withBeneficiariesCount = <T extends { beneficiariesCount?: number | null }
   beneficiariesCount: project.beneficiariesCount ?? 0,
 });
 
-const notDeletedFilter = {
-  OR: [{ deletedAt: null }, { deletedAt: { isSet: false } }],
-};
+const notDeletedFilter = notSoftDeleted;
+
+/**
+ * Adds the locale-resolved display fields a public response needs.
+ *
+ * The raw `titleAr`/`titleEn`/`descriptionAr`/`descriptionEn` fields are kept so
+ * the admin dashboard keeps working against the same endpoints, while `title`,
+ * `description` and `categoryName` are already in the language the visitor asked
+ * for — the frontend never has to choose between the two itself.
+ */
+const withLocalizedFields = <
+  T extends {
+    titleAr?: string | null;
+    titleEn?: string | null;
+    descriptionAr?: string | null;
+    descriptionEn?: string | null;
+    category?: { nameAr?: string | null; nameEn?: string | null } | null;
+  },
+>(
+  project: T,
+  locale: ContentLocale,
+) => ({
+  ...project,
+  title: pickLocalized(locale, project.titleAr, project.titleEn),
+  description: pickLocalized(locale, project.descriptionAr, project.descriptionEn),
+  categoryName: project.category
+    ? pickLocalized(locale, project.category.nameAr, project.category.nameEn)
+    : null,
+});
 
 export const projectsService = {
   async getProjects(
     page = 1,
     limit = 10,
     status?: ProjectStatus | 'ALL',
+    categoryId?: string,
+    locale: ContentLocale = 'ar',
   ) {
-    const where = {
+    const where: Prisma.ProjectWhereInput = {
       ...notDeletedFilter,
       ...(status && status !== 'ALL' ? { status } : {}),
+      // Filtering is opt-in: when no category is requested (the "All" filter) the
+      // clause is absent entirely, so uncategorized projects (categoryId = null,
+      // e.g. after their category was deleted) stay visible alongside the rest.
+      ...(categoryId ? { categoryId } : {}),
     };
 
     const [total, projects] = await Promise.all([
@@ -46,7 +80,7 @@ export const projectsService = {
 
     return {
       data: projects.map((project: any) => ({
-        ...withBeneficiariesCount(project),
+        ...withBeneficiariesCount(withLocalizedFields(project, locale)),
         progressPercentage: calculateProgressPercentage(project.collectedAmount, project.targetAmount),
       })),
       total,
@@ -55,7 +89,7 @@ export const projectsService = {
     };
   },
 
-  async getProjectById(id: string) {
+  async getProjectById(id: string, locale: ContentLocale = 'ar') {
     const project = await prisma.project.findFirst({
       where: { id, ...notDeletedFilter },
       select: projectSelect,
@@ -66,7 +100,7 @@ export const projectsService = {
     }
 
     return {
-      ...withBeneficiariesCount(project),
+      ...withBeneficiariesCount(withLocalizedFields(project, locale)),
       progressPercentage: calculateProgressPercentage(project.collectedAmount, project.targetAmount),
     };
   },
@@ -76,11 +110,35 @@ export const projectsService = {
     return (proj as any)?.imgPublicId ?? null;
   },
 
+  /**
+   * Returns the categories that still own at least one live project.
+   *
+   * Used by the public project filter bar so it only offers filters that can
+   * actually match something — a category whose projects were all unassigned or
+   * soft-deleted would otherwise render a permanently empty filter.
+   */
+  async getPopulatedCategories(locale: ContentLocale = 'ar') {
+    const categories = await prisma.category.findMany({
+      where: { projects: { some: notDeletedFilter } },
+      orderBy: { nameEn: 'asc' },
+      select: { id: true, nameAr: true, nameEn: true },
+    });
+
+    return categories.map((category) => ({
+      ...category,
+      name: pickLocalized(locale, category.nameAr, category.nameEn),
+    }));
+  },
+
   async getProjectStats() {
+    // Reuse the SAME soft-delete filter as the list query. On MongoDB, an
+    // explicit `deletedAt: null` serialises to "field is unset", so records that
+    // literally store `deletedAt: null` do NOT match `{ deletedAt: null }` —
+    // counting with the strict filter silently reported 0 for every live project.
     const [total, completed] = await Promise.all([
-      prisma.project.count({ where: { deletedAt: null } }),
+      prisma.project.count({ where: notDeletedFilter }),
       prisma.project.count({
-        where: { deletedAt: null, status: ProjectStatus.COMPLETED },
+        where: { ...notDeletedFilter, status: ProjectStatus.COMPLETED },
       }),
     ]);
 
@@ -91,17 +149,37 @@ export const projectsService = {
     };
   },
 
-  async createProject(input: CreateProjectInput) {
-    const sanitizedInput = input;
+  /**
+   * Resolves a category id to a validated, existing category.
+   *
+   * `categoryId` is nullable on Project so that deleting a category can safely
+   * unassign its projects — but that does NOT mean an admin may create a project
+   * without a category. Every project enters the system categorized; it only
+   * loses its category when the category itself is deleted.
+   */
+  async resolveCategoryOrThrow(categoryId: string | undefined | null): Promise<string> {
+    const normalized = categoryId?.trim();
+
+    if (!normalized) {
+      throw new AppError('Category is required to create a project', 400);
+    }
 
     const category = await prisma.category.findUnique({
-      where: { id: sanitizedInput.categoryId },
+      where: { id: normalized },
       select: { id: true },
     });
 
     if (!category) {
       throw new AppError('Category was not found', 404);
     }
+
+    return category.id;
+  },
+
+  async createProject(input: CreateProjectInput) {
+    const sanitizedInput = input;
+
+    const categoryId = await projectsService.resolveCategoryOrThrow(sanitizedInput.categoryId);
 
     const projectStatus = sanitizedInput.status ?? ProjectStatus.ACTIVE;
 
@@ -116,7 +194,7 @@ export const projectsService = {
         targetAmount: sanitizedInput.targetAmount,
         beneficiariesCount: sanitizedInput.beneficiariesCount,
         status: projectStatus,
-        category: { connect: { id: sanitizedInput.categoryId } },
+        category: { connect: { id: categoryId } },
       } as any,
       select: projectSelect as any,
     });
@@ -127,15 +205,11 @@ export const projectsService = {
   async updateProject(input: UpdateProjectInput) {
     const sanitizedInput = input;
 
-    if (sanitizedInput.categoryId) {
-      const category = await prisma.category.findUnique({
-        where: { id: sanitizedInput.categoryId },
-        select: { id: true },
-      });
-
-      if (!category) {
-        throw new AppError('Category was not found', 404);
-      }
+    // A category supplied on update must exist. An explicitly empty string means
+    // "unassign" and is allowed, because a project may legitimately have lost its
+    // category when that category was deleted.
+    if (sanitizedInput.categoryId !== undefined && sanitizedInput.categoryId !== null && sanitizedInput.categoryId !== '') {
+      await projectsService.resolveCategoryOrThrow(sanitizedInput.categoryId);
     }
 
     const existingProject = await prisma.project.findUnique({
@@ -175,7 +249,16 @@ export const projectsService = {
           ...(sanitizedInput.beneficiariesCount !== undefined
             ? { beneficiariesCount: sanitizedInput.beneficiariesCount }
             : {}),
-          ...(sanitizedInput.categoryId ? { category: { connect: { id: sanitizedInput.categoryId } } } : {}),
+          // `categoryId` is intentionally tri-state on update:
+          //  - undefined -> leave the current category untouched (a normal edit);
+          //  - a real id -> reassign to that (already validated) category;
+          //  - ''        -> explicit unassign, which is the only way an admin can
+          //                 deliberately make a project uncategorized by hand.
+          ...(sanitizedInput.categoryId === ''
+            ? { category: { disconnect: true } }
+            : sanitizedInput.categoryId
+              ? { category: { connect: { id: sanitizedInput.categoryId } } }
+              : {}),
           status: updatedStatus,
         } as any,
         select: projectSelect as any,

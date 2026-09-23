@@ -46,13 +46,28 @@ const parseStatus = (value: string | string[] | ParsedQs | ParsedQs[] | (string 
   throw new AppError('Invalid project status filter', 400);
 };
 
+const parseCategoryId = (value: string | string[] | ParsedQs | ParsedQs[] | (string | ParsedQs)[] | undefined): string | undefined => {
+  const categoryId = getStringValue(value)?.trim();
+
+  if (!categoryId || categoryId === 'ALL' || categoryId === 'all') {
+    return undefined;
+  }
+
+  if (!isMongoObjectId(categoryId)) {
+    throw new AppError('Invalid category filter', 400);
+  }
+
+  return categoryId;
+};
+
 export const getProjects: RequestHandler = async (req, res, next) => {
   try {
     const page = toNumber(req.query.page, 1);
     const limit = toNumber(req.query.limit, 10);
     const status = parseStatus(req.query.status);
+    const categoryId = parseCategoryId(req.query.categoryId);
 
-    const result = await projectsService.getProjects(page, limit, status);
+    const result = await projectsService.getProjects(page, limit, status, categoryId, req.locale);
 
     res.status(200).json({
       success: true,
@@ -78,7 +93,7 @@ export const getProject: RequestHandler = async (req, res, next) => {
       throw new AppError('Invalid project ID', 400);
     }
 
-    const project = await projectsService.getProjectById(id);
+    const project = await projectsService.getProjectById(id, req.locale);
 
     res.status(200).json({
       success: true,
@@ -179,6 +194,24 @@ export const getProjectStats: RequestHandler = async (_req, res, next) => {
   }
 };
 
+/**
+ * Categories that still own live projects, for the public filter bar.
+ * Deliberately public: it only exposes id + localized names of categories that
+ * are already reachable through the public category listing.
+ */
+export const getProjectCategories: RequestHandler = async (req, res, next) => {
+  try {
+    const categories = await projectsService.getPopulatedCategories(req.locale);
+
+    res.status(200).json({
+      success: true,
+      message: 'Project categories fetched successfully',
+      data: categories,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 export const deleteProject: RequestHandler = async (req, res, next) => {
   try {

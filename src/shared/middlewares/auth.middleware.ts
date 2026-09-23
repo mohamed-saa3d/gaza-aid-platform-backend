@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
-import { AdminRole, Role } from '@prisma/client';
+import { Role } from '@prisma/client';
 import { AppError } from '../errors/app-error';
 import { type AuthTokenPayload, verifyToken } from '../utils/jwt';
 
@@ -149,27 +149,6 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction): v
 
     if (!req.user || (req.user.role !== 'ADMIN' && req.user.isAdmin !== true)) {
       next(new AppError('Forbidden: Admin access required', 403));
-      return;
-    }
-
-    next();
-  }, 'admin');
-};
-
-export const requireSuperAdmin = (req: Request, res: Response, next: NextFunction): void => {
-  authenticateUser(req, res, (error?: unknown) => {
-    if (error) {
-      next(error);
-      return;
-    }
-
-    const rootAdminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
-    const isConfiguredRootAdmin = Boolean(
-      rootAdminEmail && req.user?.email?.trim().toLowerCase() === rootAdminEmail,
-    );
-
-    if (!req.user || (req.user.role !== AdminRole.SUPER_ADMIN && !isConfiguredRootAdmin)) {
-      next(new AppError('Forbidden: Super admin access required', 403));
       return;
     }
 

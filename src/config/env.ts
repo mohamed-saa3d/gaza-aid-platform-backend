@@ -40,5 +40,10 @@ export const env = {
     .map((origin) => origin.trim())
     .filter(Boolean),
   RATE_LIMIT_WINDOW_MS: toNumber(process.env.RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000),
+  // Budget for state-changing requests (POST/PUT/PATCH/DELETE) per IP per route group.
   RATE_LIMIT_MAX_REQUESTS: toNumber(process.env.RATE_LIMIT_MAX_REQUESTS, 100),
+  // Separate, far more generous budget for public GET/HEAD/OPTIONS traffic.
+  // Loading a single public page legitimately fires several GETs (settings,
+  // categories, projects, ...), so reads must never share the write budget.
+  RATE_LIMIT_MAX_READ_REQUESTS: toNumber(process.env.RATE_LIMIT_MAX_READ_REQUESTS, 600),
 };

@@ -11,7 +11,7 @@ export const getFaqs: RequestHandler = async (req, res, next) => {
   try {
     const page = parsePage(req.query.page, 1);
     const limit = parseLimit(req.query.limit, 10);
-    const result = await faqService.getFaqs(page, limit);
+    const result = await faqService.getFaqs(page, limit, req.locale);
 
     res.status(200).json({
       success: true,
@@ -31,7 +31,7 @@ export const getFaq: RequestHandler = async (req, res, next) => {
       throw new AppError('Invalid FAQ ID', 400);
     }
 
-    const faq = await faqService.getFaqById(id);
+    const faq = await faqService.getFaqById(id, req.locale);
 
     res.status(200).json({
       success: true,

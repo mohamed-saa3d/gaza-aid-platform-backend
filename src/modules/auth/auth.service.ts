@@ -309,7 +309,7 @@ export const authService = {
     if (
       payload.isAdmin !== true ||
       !payload.sessionId ||
-      (payload.role !== AdminRole.ADMIN && payload.role !== AdminRole.SUPER_ADMIN)
+      (payload.role !== AdminRole.ADMIN)
     ) {
       throw new AppError('Refresh token is invalid or expired', 401);
     }
