@@ -27,7 +27,9 @@ import { errorMiddleware } from './shared/errors/error.middleware';
 
 export const app = express();
 
-const allowedOrigins = ['http://localhost:3000', 'http://127.0.0.1:3000'];
+const allowedOrigins = env.ALLOWED_ORIGINS.length > 0
+  ? env.ALLOWED_ORIGINS
+  : ['http://localhost:3000', 'http://127.0.0.1:3000'];
 
 app.set('trust proxy', 1);
 app.use(helmet());

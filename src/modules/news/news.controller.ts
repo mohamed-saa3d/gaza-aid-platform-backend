@@ -82,23 +82,29 @@ export const updateNews: RequestHandler = async (req, res, next) => {
 
     const payload: any = { ...req.body };
 
+    let previousPublicId: string | null = null;
     if (req.file && (req.file as any).buffer) {
-      // get existing to delete old image
-      const existing = await newsService.getNewsById(id);
-      if (existing && (existing as any).imgPublicId) {
-        try {
-          await cloudinaryService.deleteImage((existing as any).imgPublicId);
-        } catch (err) {
-          logger.warn('Failed to delete previous Cloudinary image for news', err);
-        }
-      }
-
+      // Upload the new image first. Deleting the old asset before the new one
+      // exists leaves the DB pointing at a URL that no longer resolves if the
+      // upload fails.
       const uploadResult = await cloudinaryService.uploadImageStream((req.file as any).buffer, 'qaza/news');
       payload.imageUrl = uploadResult.secure_url;
       payload.imgPublicId = uploadResult.public_id;
+
+      // Remember the old public id; it is only removed once the DB write succeeds.
+      const existing = await newsService.getNewsById(id);
+      previousPublicId = (existing as any)?.imgPublicId ?? null;
     }
 
     const news = await newsService.updateNews({ id, ...payload });
+
+    if (previousPublicId) {
+      try {
+        await cloudinaryService.deleteImage(previousPublicId);
+      } catch (err) {
+        logger.warn('Failed to delete previous Cloudinary image for news', err);
+      }
+    }
 
     try {
       await redisService.clearCache('news');

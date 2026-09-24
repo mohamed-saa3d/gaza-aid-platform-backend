@@ -20,7 +20,7 @@ export const signToken = (payload: AuthTokenPayload): string => {
 };
 
 export const verifyToken = (token: string): AuthTokenPayload => {
-  return jwt.verify(token, env.JWT_SECRET) as AuthTokenPayload;
+  return jwt.verify(token, env.JWT_SECRET, { algorithms: ['HS256'] }) as AuthTokenPayload;
 };
 
 export const signRefreshToken = (payload: AuthTokenPayload): string => {
@@ -32,5 +32,5 @@ export const signRefreshToken = (payload: AuthTokenPayload): string => {
 };
 
 export const verifyRefreshToken = (token: string): AuthTokenPayload => {
-  return jwt.verify(token, env.JWT_REFRESH_SECRET) as AuthTokenPayload;
+  return jwt.verify(token, env.JWT_REFRESH_SECRET, { algorithms: ['HS256'] }) as AuthTokenPayload;
 };

@@ -5,6 +5,7 @@ export const settingsSelect = {
   aboutUsTextAr: true,
   aboutUsTextEn: true,
   logoUrl: true,
+  logoPublicId: true,
   aboutUsImageUrl: true,
   contactPhone: true,
   contactEmail: true,

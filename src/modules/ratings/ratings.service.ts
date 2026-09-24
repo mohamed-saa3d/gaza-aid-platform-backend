@@ -29,10 +29,15 @@ export const ratingsService = {
       });
 
       if (!userExists && viewer.guestKey) {
-        return prisma.platformRating.upsert({
-          where: { guestKey: viewer.guestKey },
-          create: { guestKey: viewer.guestKey, value: input.value, comment },
-          update: { value: input.value, comment },
+        const existing = await prisma.platformRating.findFirst({ where: { guestKey: viewer.guestKey } });
+        if (existing) {
+          return prisma.platformRating.update({
+            where: { id: existing.id },
+            data: { value: input.value, comment },
+          });
+        }
+        return prisma.platformRating.create({
+          data: { guestKey: viewer.guestKey, value: input.value, comment },
         });
       }
 
@@ -40,14 +45,16 @@ export const ratingsService = {
         throw new AppError('A rating identity could not be established', 400);
       }
 
-      return prisma.platformRating.upsert({
-        where: { userId: viewer.userId },
-        create: {
+      const existingUserRating = await prisma.platformRating.findFirst({ where: { userId: viewer.userId } });
+      if (existingUserRating) {
+        return prisma.platformRating.update({
+          where: { id: existingUserRating.id },
+          data: { value: input.value, comment },
+        });
+      }
+      return prisma.platformRating.create({
+        data: {
           user: { connect: { id: viewer.userId } },
-          value: input.value,
-          comment,
-        },
-        update: {
           value: input.value,
           comment,
         },
@@ -55,14 +62,16 @@ export const ratingsService = {
     }
 
     if (viewer.guestKey) {
-      return prisma.platformRating.upsert({
-        where: { guestKey: viewer.guestKey },
-        create: {
+      const existingGuestRating = await prisma.platformRating.findFirst({ where: { guestKey: viewer.guestKey } });
+      if (existingGuestRating) {
+        return prisma.platformRating.update({
+          where: { id: existingGuestRating.id },
+          data: { value: input.value, comment },
+        });
+      }
+      return prisma.platformRating.create({
+        data: {
           guestKey: viewer.guestKey,
-          value: input.value,
-          comment,
-        },
-        update: {
           value: input.value,
           comment,
         },
@@ -86,9 +95,9 @@ export const ratingsService = {
         _count: { id: true },
       }),
       viewer.userId
-        ? prisma.platformRating.findUnique({ where: { userId: viewer.userId } })
+        ? prisma.platformRating.findFirst({ where: { userId: viewer.userId } })
         : viewer.guestKey
-          ? prisma.platformRating.findUnique({ where: { guestKey: viewer.guestKey } })
+          ? prisma.platformRating.findFirst({ where: { guestKey: viewer.guestKey } })
           : Promise.resolve(null),
     ]);
 

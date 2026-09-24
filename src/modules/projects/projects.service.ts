@@ -57,15 +57,20 @@ export const projectsService = {
     status?: ProjectStatus | 'ALL',
     categoryId?: string,
     locale: ContentLocale = 'ar',
+    urgent?: boolean,
   ) {
-    const where: Prisma.ProjectWhereInput = {
-      ...notDeletedFilter,
-      ...(status && status !== 'ALL' ? { status } : {}),
-      // Filtering is opt-in: when no category is requested (the "All" filter) the
-      // clause is absent entirely, so uncategorized projects (categoryId = null,
-      // e.g. after their category was deleted) stay visible alongside the rest.
-      ...(categoryId ? { categoryId } : {}),
-    };
+    const clauses: Prisma.ProjectWhereInput[] = [notDeletedFilter];
+    if (status && status !== 'ALL') {
+      clauses.push({ status });
+    }
+    if (urgent !== undefined) {
+      clauses.push({ isUrgent: urgent });
+    }
+    if (categoryId) {
+      clauses.push({ categoryId });
+    }
+
+    const where: Prisma.ProjectWhereInput = { AND: clauses };
 
     const [total, projects] = await Promise.all([
       prisma.project.count({ where }),
@@ -262,6 +267,7 @@ export const projectsService = {
         targetAmount: sanitizedInput.targetAmount,
         beneficiariesCount: sanitizedInput.beneficiariesCount,
         status: projectStatus,
+        isUrgent: sanitizedInput.isUrgent ?? false,
         category: { connect: { id: categoryId } },
       } as any,
       select: projectSelect as any,
@@ -317,6 +323,7 @@ export const projectsService = {
           ...(sanitizedInput.beneficiariesCount !== undefined
             ? { beneficiariesCount: sanitizedInput.beneficiariesCount }
             : {}),
+          ...(sanitizedInput.isUrgent !== undefined ? { isUrgent: sanitizedInput.isUrgent } : {}),
           // `categoryId` is intentionally tri-state on update:
           //  - undefined -> leave the current category untouched (a normal edit);
           //  - a real id -> reassign to that (already validated) category;

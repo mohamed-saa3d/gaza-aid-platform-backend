@@ -7,6 +7,7 @@ model PlatformSettings {
   aboutUsTextAr   String
   aboutUsTextEn   String
   logoUrl         String?
+  logoPublicId    String?
   aboutUsImageUrl String?
   contactPhone    String?
   contactEmail    String?

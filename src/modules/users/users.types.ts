@@ -2,6 +2,7 @@ export type UpdateProfileInput = {
   userId: string;
   name?: string;
   avatar?: string | null;
+  avatarPublicId?: string | null;
 };
 
 export type ChangePasswordInput = {

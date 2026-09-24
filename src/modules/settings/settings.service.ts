@@ -53,6 +53,7 @@ export const settingsService = {
           ...(input.aboutUsTextAr !== undefined ? { aboutUsTextAr: input.aboutUsTextAr.trim() } : {}),
           ...(input.aboutUsTextEn !== undefined ? { aboutUsTextEn: input.aboutUsTextEn.trim() } : {}),
           ...(input.logoUrl !== undefined ? { logoUrl: input.logoUrl || null } : {}),
+          ...(input.logoPublicId !== undefined ? { logoPublicId: input.logoPublicId || null } : {}),
           ...(input.aboutUsImageUrl !== undefined ? { aboutUsImageUrl: input.aboutUsImageUrl || null } : {}),
           ...(input.contactPhone !== undefined ? { contactPhone: input.contactPhone || null } : {}),
           ...(input.contactEmail !== undefined ? { contactEmail: input.contactEmail || null } : {}),

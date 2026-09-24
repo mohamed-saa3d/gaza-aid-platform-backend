@@ -66,8 +66,10 @@ export const getProjects: RequestHandler = async (req, res, next) => {
     const limit = toNumber(req.query.limit, 10);
     const status = parseStatus(req.query.status);
     const categoryId = parseCategoryId(req.query.categoryId);
+    const urgentParam = getStringValue(req.query.urgent);
+    const urgent = urgentParam !== undefined ? urgentParam === 'true' : undefined;
 
-    const result = await projectsService.getProjects(page, limit, status, categoryId, req.locale);
+    const result = await projectsService.getProjects(page, limit, status, categoryId, req.locale, urgent);
 
     res.status(200).json({
       success: true,
@@ -145,23 +147,28 @@ export const updateProject: RequestHandler = async (req, res, next) => {
 
     const { collectedAmount, raisedAmount, ...projectPayload } = req.body as any;
 
+    let previousPublicId: string | null = null;
     if (req.file && req.file.buffer) {
-      // fetch existing project's public id to delete previous image
-      const existingPublicId = await projectsService.getProjectPublicId(id);
-      if (existingPublicId) {
-        try {
-          await cloudinaryService.deleteImage(existingPublicId);
-        } catch (err) {
-          logger.warn('Failed to delete previous Cloudinary image', err);
-        }
-      }
-
+      // Upload the new image first. Deleting the old asset before the new one
+      // exists leaves the DB pointing at a URL that no longer resolves if the
+      // upload fails.
       const uploadResult = await cloudinaryService.uploadImageStream(req.file.buffer, 'qaza/projects');
       projectPayload.imgUrl = uploadResult.secure_url;
       projectPayload.imgPublicId = uploadResult.public_id;
+
+      // Remember the old public id; it is only removed once the DB write succeeds.
+      previousPublicId = await projectsService.getProjectPublicId(id);
     }
 
     const project = await projectsService.updateProject({ id, ...projectPayload });
+
+    if (previousPublicId) {
+      try {
+        await cloudinaryService.deleteImage(previousPublicId);
+      } catch (err) {
+        logger.warn('Failed to delete previous Cloudinary image', err);
+      }
+    }
 
     // hard clear public project cache entries immediately after update
     try {

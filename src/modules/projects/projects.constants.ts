@@ -11,6 +11,7 @@ export const projectSelect = {
   collectedAmount: true,
   beneficiariesCount: true,
   status: true,
+  isUrgent: true,
   category: {
     select: {
       id: true,

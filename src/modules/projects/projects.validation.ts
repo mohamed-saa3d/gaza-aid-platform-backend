@@ -17,6 +17,7 @@ export const createProjectSchema = z.object({
     collectedAmount: z.coerce.number().nonnegative('Collected amount must be non-negative').optional(),
     beneficiariesCount: z.coerce.number().int().nonnegative().optional(),
     status: z.nativeEnum(ProjectStatus),
+    isUrgent: z.coerce.boolean().optional(),
     /**
      * Required on create. `categoryId` is nullable in the database ONLY so that
      * deleting a category can unassign its projects without deleting them; every
@@ -37,6 +38,7 @@ export const updateProjectSchema = z.object({
     collectedAmount: z.coerce.number().nonnegative('Collected amount must be non-negative').optional(),
     beneficiariesCount: z.coerce.number().int().nonnegative().optional(),
     status: z.nativeEnum(ProjectStatus).optional(),
+    isUrgent: z.coerce.boolean().optional(),
     // Optional on update: omitting it keeps the current category, and an empty
     // string explicitly unassigns the project (only meaningful for a project
     // whose category was already deleted).

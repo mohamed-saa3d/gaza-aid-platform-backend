@@ -30,6 +30,7 @@ model Project {
   collectedAmount Int           @default(0)
   beneficiariesCount Int         @default(0)
   status          ProjectStatus @default(ACTIVE)
+  isUrgent        Boolean       @default(false)
 
   categoryId String?    @db.ObjectId
   category   Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
@@ -40,5 +41,6 @@ model Project {
   deletedAt DateTime?
 
   @@index([status])
+  @@index([isUrgent])
   @@index([createdAt])
 }

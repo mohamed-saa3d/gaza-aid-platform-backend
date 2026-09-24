@@ -11,6 +11,7 @@ export type CreateProjectInput = {
   targetAmount: number;
   beneficiariesCount?: number;
   status: ProjectStatus;
+  isUrgent?: boolean;
   categoryId: string;
 };
 
@@ -26,5 +27,6 @@ export type UpdateProjectInput = {
   targetAmount?: number;
   beneficiariesCount?: number;
   status?: ProjectStatus;
+  isUrgent?: boolean;
   categoryId?: string;
 };

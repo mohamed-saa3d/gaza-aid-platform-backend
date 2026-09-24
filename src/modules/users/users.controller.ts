@@ -53,8 +53,17 @@ export const updateUserAvatar: RequestHandler = async (req, res, next) => {
       throw new AppError('Avatar image is required', 400);
     }
 
+    const existingUser = await usersService.getProfile(userId);
+    if (existingUser.avatarPublicId) {
+      try {
+        await cloudinaryService.deleteImage(existingUser.avatarPublicId);
+      } catch (err) {
+        // Ignore errors if previous image was not found or deleted
+      }
+    }
+
     const uploadResult = await cloudinaryService.uploadImageStream(req.file.buffer, 'qaza/users');
-    const user = await usersService.updateAvatar(userId, uploadResult.secure_url);
+    const user = await usersService.updateAvatar(userId, uploadResult.secure_url, uploadResult.public_id);
 
     res.status(200).json({
       success: true,

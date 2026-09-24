@@ -49,6 +49,15 @@ export const uploadSiteLogo: RequestHandler = async (req, res, next) => {
       throw new AppError('Logo image file is required', 400);
     }
 
+    const existing = await settingsService.getSettings();
+    if (existing.logoPublicId) {
+      try {
+        await cloudinaryService.deleteImage(existing.logoPublicId);
+      } catch (err) {
+        logger.warn('Failed to delete previous logo from Cloudinary', err);
+      }
+    }
+
     const uploadResult = await cloudinaryService.uploadImageStream(
       req.file.buffer,
       'qaza/branding',
@@ -56,6 +65,7 @@ export const uploadSiteLogo: RequestHandler = async (req, res, next) => {
 
     const settings = await settingsService.updateSettings({
       logoUrl: uploadResult.secure_url,
+      logoPublicId: uploadResult.public_id,
     });
 
     try {

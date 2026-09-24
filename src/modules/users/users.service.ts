@@ -26,6 +26,7 @@ export const usersService = {
       const updateData: Record<string, unknown> = {
         ...(input.name !== undefined ? { name: input.name.trim() } : {}),
         ...(input.avatar !== undefined ? { avatar: input.avatar } : {}),
+        ...(input.avatarPublicId !== undefined ? { avatarPublicId: input.avatarPublicId } : {}),
       };
 
       const updateResult = await prisma.user.updateMany({
@@ -46,10 +47,10 @@ export const usersService = {
     }
   },
 
-  async updateAvatar(userId: string, avatarUrl: string) {
+  async updateAvatar(userId: string, avatarUrl: string, avatarPublicId?: string) {
     const updateResult = await prisma.user.updateMany({
       where: { id: userId, ...notSoftDeleted },
-      data: { avatar: avatarUrl },
+      data: { avatar: avatarUrl, ...(avatarPublicId ? { avatarPublicId } : {}) },
     });
 
     if (updateResult.count === 0) {
@@ -133,7 +134,7 @@ export const usersService = {
             id: true,
             titleAr: true,
             titleEn: true,
-            imageUrl: true,
+            imgUrl: true,
             status: true,
           },
         },
