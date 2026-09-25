@@ -1,9 +1,16 @@
 import { env } from './config/env';
 import { app } from './app';
-import './workers';
 import { seedAdmin } from './bootstrap/admin.bootstrap';
 
 const startServer = async (): Promise<void> => {
+  // Only start BullMQ workers when NOT on a serverless platform.
+  // Vercel sets VERCEL=1 automatically. Workers need a persistent
+  // Redis connection and a long-running process, neither of which
+  // exists in serverless functions.
+  if (!process.env.VERCEL) {
+  await import('./workers/index.js');
+}
+
   await seedAdmin();
 
   app.listen(env.PORT, () => {

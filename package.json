@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "start": "node dist/server.js",
     "dev": "concurrently \"tsx watch src/server.ts\"",
     "db:reset": "tsx scripts/reset-db.ts",
     "db:studio": "npx prisma studio",
