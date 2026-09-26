@@ -6,9 +6,6 @@ model PlatformSettings {
   // reads or writes them, so nothing is lost or corrupted.
   aboutUsTextAr   String
   aboutUsTextEn   String
-  logoUrl         String?
-  logoPublicId    String?
-  aboutUsImageUrl String?
   contactPhone    String?
   contactEmail    String?
 

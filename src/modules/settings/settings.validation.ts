@@ -4,8 +4,6 @@ export const updateSettingsSchema = z.object({
   body: z.object({
     aboutUsTextAr: z.string().trim().min(10).optional(),
     aboutUsTextEn: z.string().trim().min(10).optional(),
-    logoUrl: z.string().trim().url('Invalid logo URL').optional(),
-    aboutUsImageUrl: z.string().trim().url('Invalid image URL').optional(),
     contactPhone: z.string().trim().optional(),
     // Empty string is allowed so an admin can CLEAR the email. A non-empty value
     // must still be a valid email. Without this, clearing the field sent "" and
