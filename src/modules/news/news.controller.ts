@@ -98,18 +98,21 @@ export const updateNews: RequestHandler = async (req, res, next) => {
 
     const news = await newsService.updateNews({ id, ...payload });
 
+    // Invalidate BEFORE the Cloudinary cleanup below. The DB write is what public
+    // readers see; the old asset removal is housekeeping. Awaiting Cloudinary
+    // first only widened the window in which a stale cached list was still served.
+    try {
+      await redisService.clearCache('news');
+    } catch (cacheError) {
+      logger.error('[Redis] Failed to invalidate news cache after update', cacheError);
+    }
+
     if (previousPublicId) {
       try {
         await cloudinaryService.deleteImage(previousPublicId);
       } catch (err) {
         logger.warn('Failed to delete previous Cloudinary image for news', err);
       }
-    }
-
-    try {
-      await redisService.clearCache('news');
-    } catch (cacheError) {
-      logger.error('[Redis] Failed to invalidate news cache after update', cacheError);
     }
 
     res.status(200).json({

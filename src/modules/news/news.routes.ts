@@ -17,8 +17,8 @@ import {
 
 export const newsRoutes = Router();
 
-newsRoutes.get('/', useCache('news', 3600), getNewsList);
-newsRoutes.get('/:id', useCache('news', 3600), getNews);
+newsRoutes.get('/', useCache('news', 1800), getNewsList);
+newsRoutes.get('/:id', useCache('news', 1800), getNews);
 newsRoutes.post('/', requireAdmin, uploadSingleImage('image'), validateRequest(createNewsSchema), createNews);
 newsRoutes.put('/:id', requireAdmin, uploadSingleImage('image'), validateRequest(updateNewsSchema), updateNews);
 newsRoutes.delete('/:id', requireAdmin, deleteNews);
